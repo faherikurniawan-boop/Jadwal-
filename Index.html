@@ -1,1 +1,75 @@
-index
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Sholat Harian</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #jadwal-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            max-width: 300px;
+            margin: auto;
+            border-radius: 8px;
+        }
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="jadwal-container">
+        <h2>Jadwal Sholat</h2>
+        <h3 id="kota-tanggal"></h3>
+        <ul id="daftar-jadwal"></ul>
+    </div>
+
+    <script>
+        // ID kota Jakarta (Anda bisa ganti)
+        const id_kota = "1231";
+        
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        const url = `https://api.myquran.com/v2/sholat/jadwal/${id_kota}/${year}/${month}/${day}`;
+
+        async function fetchJadwalSholat() {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status) {
+                    const jadwal = data.data.jadwal;
+                    document.getElementById('kota-tanggal').innerText = `${data.data.lokasi}, ${jadwal.tanggal}`;
+                    
+                    const ul = document.getElementById('daftar-jadwal');
+                    ul.innerHTML = `
+                        <li>Imsak   : ${jadwal.imsak}</li>
+                        <li>Subuh   : ${jadwal.subuh}</li>
+                        <li>Terbit  : ${jadwal.terbit}</li>
+                        <li>Dzuhur  : ${jadwal.dzuhur}</li>
+                        <li>Ashar   : ${jadwal.ashar}</li>
+                        <li>Maghrib : ${jadwal.maghrib}</li>
+                        <li>Isya    : ${jadwal.isya}</li>
+                    `;
+                } else {
+                    document.getElementById('kota-tanggal').innerText = "Gagal mengambil data.";
+                }
+            } catch (error) {
+                document.getElementById('kota-tanggal').innerText = "Terjadi kesalahan koneksi.";
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        fetchJadwalSholat();
+    </script>
+</body>
+</html>
+
