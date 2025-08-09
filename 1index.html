@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Jadwal Sholat RIA — V3</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <meta name="description" content="Jadwal Sholat + Kompas Kiblat + Adzan + Kalender + Multi-bahasa + Ultra-offline. Single-file, tanpa build.">
+
+  <!-- Manifest (disuntikkan dinamis agar tetap single-file) -->
+  <link rel="manifest" id="manifest-link" href="">
+  <script>
+    const _manifestV3 = {
+      "name": "Jadwal Sholat RIA",
+      "short_name": "RIA Sholat",
+      "start_url": "./?source=pwa",
+      "display": "standalone",
+      "background_color": "#0b1220",
+      "theme_color": "#0ea5e9",
+      "icons": [{
+        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%2322c55e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='24' fill='url(%23g)'/%3E%3Cpath d='M64 20l28 20v48a8 8 0 01-8 8H44a8 8 0 01-8-8V40L64 20z' fill='%23fff'/%3E%3Cpath d='M72 96V64a8 8 0 10-16 0v32' stroke='%230ea5e9' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E",
+        "sizes": "128x128",
+        "type": "image/svg+xml",
+        "purpose": "any maskable"
+      }]
+    };
+    const __mblob = new Blob([JSON.stringify(_manifestV3)], {type: 'application/json'});
+    const __murl = URL.createObjectURL(__mblob);
+    document.addEventListener('DOMContentLoaded', ()=> {
+      document.getElementById('manifest-link').setAttribute('href', __murl);
+    });
+  </script>
+
+  <!-- Favicon (SVG data URI) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g2' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%2315803d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='24' fill='url(%23g2)'/%3E%3Cpath d='M64 20l28 20v48a8 8 0 01-8 8H44a8 8 0 01-8-8V40L64 20z' fill='%23fff'/%3E%3C/svg%3E" />
+
+  <!-- Styles V3 -->
+  <style>
+    :root{
+      --bg:#0b1220;
+      --bg-2:#0c1326;
+      --card:#0f172a;
+      --muted:#94a3b8;
+      --text:#e6edf3;
+      --brand:#0ea5e9;
+      --brand-2:#22c55e;
+      --warn:#f59e0b;
+      --err:#ef4444;
+      --ring: 0 0 0 3px rgba(14,165,233,.25);
+      --shadow: 0 20px 40px rgba(2,8,23,.4), 0 4px 10px rgba(2,8,23,.25);
+    }
+    [data-theme="light"]{
+      --bg:#f5f7fb; --bg-2:#eef3fb; --card:#ffffff; --text:#0b1220; --muted:#475569;
+      --shadow: 0 6px 20px rgba(2,8,23,.08), 0 2px 6px rgba(2,8,23,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Noto Sans", Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, color-mix(in oklab, var(--brand) 28%, transparent) 30%, transparent 60%),
+        radial-gradient(900px 500px at 100% 10%, color-mix(in oklab, var(--brand-2) 28%, transparent) 30%, transparent 60%),
+        var(--bg);
+      color:var(--text);
+    }
+    a{color:var(--brand); text-decoration:none}
+    .container{max-width:1180px; margin:0 auto; padding:24px;}
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter:saturate(140%) blur(10px);
+      background:linear-gradient(to bottom, color-mix(in oklab, var(--bg) 96%, transparent), color-mix(in oklab, var(--bg) 70%, transparent));
+      border-bottom:1px solid #1e293b55;
+    }
+    .nav{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 24px;}
+    .brand{display:flex; gap:12px; align-items:center}
+    .brand .logo{width:32px; height:32px}
+    .brand h1{font-size:18px; margin:0}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      padding:10px 14px; border:1px solid #1e293b33; background:color-mix(in oklab, var(--bg) 80%, var(--bg-2) 20%); color:var(--text);
+      border-radius:999px; cursor:pointer; user-select:none;
+    }
+    .tab.active{background:linear-gradient(180deg,var(--brand),#0284c7); border-color:#0284c7; color:white}
+    .grid{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:18px; margin-top:22px;}
+    .card{
+      grid-column: span 12; background:linear-gradient(180deg,color-mix(in oklab, var(--card) 96%, var(--bg-2) 4%), var(--card));
+      border:1px solid #1e293b3d; border-radius:20px; padding:18px; box-shadow:var(--shadow);
+    }
+    @media (min-width:768px){
+      .span-3{grid-column:span 3}
+      .span-4{grid-column:span 4}
+      .span-5{grid-column:span 5}
+      .span-6{grid-column:span 6}
+      .span-7{grid-column:span 7}
+      .span-8{grid-column:span 8}
+      .span-9{grid-column:span 9}
+      .span-10{grid-column:span 10}
+    }
+    h2{margin:0 0 8px 0; font-size:20px}
+    p{color:var(--muted); line-height:1.6}
+    .btn{
+      display:inline-flex; gap:10px; align-items:center; padding:10px 14px; border-radius:12px;
+      border:1px solid #1e293b33; background:color-mix(in oklab, var(--bg) 80%, var(--bg-2) 20%); color:var(--text); cursor:pointer;
+      box-shadow: inset 0 -2px 0 rgba(255,255,255,.04);
+    }
+    .btn.primary{background:linear-gradient(180deg,#0ea5e9,#0284c7); border-color:#0284c7; color:white}
+    .btn.success{background:linear-gradient(180deg,#22c55e,#16a34a); border-color:#16a34a; color:white}
+    .btn.warn{background:linear-gradient(180deg,#f59e0b,#d97706); border-color:#d97706; color:white}
+    .btn.ghost{background:transparent}
+    .stack{display:flex; gap:10px; flex-wrap:wrap}
+    .kbd{padding:.18rem .5rem; border:1px solid #1f2a44; border-radius:8px; background:color-mix(in oklab, var(--bg) 90%, var(--bg-2) 10%); color:#9fb3c8}
+    .muted{color:var(--muted)}
+    .mono{font-family:ui-monospace, Menlo, Consolas, "SF Mono", "Roboto Mono", monospace}
+    .list{padding-left:20px}
+    .list li{margin:6px 0}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .pill{padding:.35rem .6rem; border-radius:999px; border:1px solid #1e293b33; background:color-mix(in oklab, var(--bg) 80%, var(--bg-2) 20%); font-size:12px}
+    .badge{padding:.25rem .5rem; border-radius:6px; background:#0ea5e91a; border:1px solid #0ea5e955; color:#0ea5e9}
+    .center{display:flex; align-items:center; justify-content:center}
+    .hr{height:1px; background:#1f2a44; margin:16px 0; opacity:.5}
+    .table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px; border:1px solid #1e293b33}
+    .table th,.table td{padding:10px 12px; border-bottom:1px solid #1e293b33; text-align:left}
+    .table th{background:color-mix(in oklab, var(--bg) 85%, var(--bg-2) 15%); color:color-mix(in oklab, var(--text) 80%, var(--muted) 20%); font-weight:600; position:sticky; top:64px}
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:.35rem .6rem; border-radius:999px; background:color-mix(in oklab, var(--bg) 85%, var(--bg-2) 15%); border:1px solid #1f2a44}
+    .ok{color:#22c55e} .warnc{color:#f59e0b} .err{color:#ef4444}
+    /* Compass UI */
+    .compass-wrap{position:relative; width:min(420px,92vw); aspect-ratio:1; margin:10px auto}
+    .ring{position:absolute; inset:0; border-radius:50%; border:2px dashed #1f2a44}
+    .needle{position:absolute; left:50%; top:50%; width:0; height:0; transform:translate(-50%,-50%) rotate(0deg); transition:transform .06s linear}
+    .needle::before{
+      content:""; display:block; width:0; height:0;
+      border-left:10px solid transparent; border-right:10px solid transparent;
+      border-bottom:170px solid #0ea5e9; margin-left:-10px; filter:drop-shadow(0 4px 12px rgba(14,165,233,.6));
+    }
+    .needle::after{
+      content:""; display:block; width:0; height:0; transform:translateY(6px);
+      border-left:8px solid transparent; border-right:8px solid transparent;
+      border-top:90px solid #ef4444; margin-left:-8px; filter:drop-shadow(0 2px 8px rgba(239,68,68,.6));
+    }
+    .dot{position:absolute; left:50%; top:50%; width:14px; height:14px; background:#fff; border-radius:50%; transform:translate(-50%,-50%)}
+    /* Toasts */
+    .toast{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px; z-index:50}
+    .toast .item{padding:10px 14px; border-radius:12px; border:1px solid #1f2a44; background:color-mix(in oklab, var(--bg) 90%, var(--bg-2) 10%); box-shadow:var(--shadow)}
+    /* Inputs */
+    .input{
+      background:color-mix(in oklab, var(--bg) 90%, var(--bg-2) 10%); border:1px solid #1f2a44; color:var(--text);
+      border-radius:12px; padding:10px 12px; outline:none; width:100%;
+    }
+    .input:focus{box-shadow:var(--ring); border-color:#0ea5e9}
+    .cols{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .switch{display:inline-flex; align-items:center; gap:10px}
+    .switch input{appearance:none; width:46px; height:28px; border-radius:999px; background:#1f2a44; position:relative; outline:none; cursor:pointer; border:1px solid #30415f}
+    .switch input:checked{background:#0ea5e9}
+    .switch input::after{content:""; position:absolute; top:2px; left:2px; width:24px; height:24px; border-radius:50%; background:#fff; transition:left .18s}
+    .switch input:checked::after{left:20px}
+    .hint{font-size:12px; color:var(--muted)}
+    .divider{height:1px; background:#1f2a4466; margin:8px 0}
+    footer{opacity:.8; padding:30px 0 60px; text-align:center}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">
+        <img class="logo" alt="logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%2322c55e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='url(%23g)'/%3E%3Cpath d='M16 6l8 6v14a2 2 0 01-2 2H10a2 2 0 01-2-2V12l8-6z' fill='%23fff'/%3E%3C/svg%3E">
+        <h1><span id="i18n-appname">Jadwal Sholat</span> <span class="pill">RIA</span></h1>
+      </div>
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-route="home"    data-i18n="tab.home">Home</button>
+        <button class="tab"        data-route="jadwal"  data-i18n="tab.jadwal">Jadwal</button>
+        <button class="tab"        data-route="kiblat"  data-i18n="tab.kiblat">Kiblat</button>
+        <button class="tab"        data-route="kalender"data-i18n="tab.kalender">Kalender</button>
+        <button class="tab"        data-route="tes"     data-i18n="tab.tes">Tes</button>
+        <button class="tab"        data-route="settings"data-i18n="tab.settings">Settings</button>
+        <button class="tab"        data-route="tentang" data-i18n="tab.tentang">Tentang</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="app"></main>
+
+  <footer class="container">
+    <div class="muted">
+      © <span id="y"></span> RIA.
+      <span class="badge" id="modeBadge">Dark</span>
+      <span class="badge">Offline Ready</span>
+      <span class="badge">No Build</span>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- TEMPLATES (V3 menambah beberapa elemen untuk i18n & favorit kota) -->
+  <template id="home-tpl">
+    <section class="grid">
+      <article class="card span-9">
+        <h2 data-i18n="home.welcome">Selamat datang 👋</h2>
+        <p class="muted" data-i18n="home.desc">
+          Aplikasi single-file berisi Jadwal Sholat, Kompas Kiblat, Alarm Adzan, Kalender, Export ICS, Offline caching, Multi-bahasa, dan Tema.
+          Cukup file <span class="mono">index.html</span> ini saja.
+        </p>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn primary" data-goto="jadwal"   data-i18n="home.openSchedule">➡️ Jadwal Hari Ini</button>
+          <button class="btn success" data-goto="kiblat"   data-i18n="home.openQibla">🧭 Kompas Kiblat</button>
+          <button class="btn"         data-goto="kalender" data-i18n="home.openCalendar">📅 Kalender</button>
+          <button class="btn" id="btnInstall" style="display:none" data-i18n="home.install">⬇️ Pasang ke Home</button>
+        </div>
+        <p class="muted" style="margin-top:10px" data-i18n="home.tips">
+          Tips: Izinkan <span class="chip">Lokasi</span> & <span class="chip">Arah Perangkat</span> agar akurat.
+        </p>
+      </article>
+
+      <article class="card span-3">
+        <h2 data-i18n="home.status">Status</h2>
+        <div class="row"><span data-i18n="home.loc">Lokasi</span><span id="stLoc" class="pill">—</span></div>
+        <div class="row"><span>Service Worker</span><span id="stSW" class="pill">—</span></div>
+        <div class="row"><span data-i18n="home.cache">Offline Cache</span><span id="stCache" class="pill">—</span></div>
+        <div class="row"><span data-i18n="home.alarm">Alarm</span><span id="stAlarm" class="pill">—</span></div>
+        <div class="row"><span data-i18n="home.notif">Notifikasi</span><span id="stNotif" class="pill">—</span></div>
+        <div class="divider"></div>
+        <div class="stack">
+          <button class="btn" id="btnReqPerm" data-i18n="home.sensorPerm">Izin Arah</button>
+          <button class="btn" id="btnGeo"     data-i18n="home.getLoc">Ambil Lokasi</button>
+          <button class="btn warn" id="btnClear" data-i18n="home.reset">Reset App</button>
+        </div>
+      </article>
+
+      <article class="card span-12">
+        <h2 data-i18n="home.log">Log</h2>
+        <div id="log" class="mono" style="white-space:pre-wrap; font-size:12px; max-height:260px; overflow:auto;"></div>
+      </article>
+    </section>
+  </template>
+
+  <template id="jadwal-tpl">
+    <section class="grid">
+      <article class="card span-12">
+        <div class="row">
+          <h2 data-i18n="jadwal.title">Jadwal Sholat Hari Ini</h2>
+          <div class="stack">
+            <button class="btn" id="btnUseGPS" data-i18n="jadwal.useGPS">Gunakan GPS</button>
+            <button class="btn primary" id="btnFetch" data-i18n="jadwal.fetch">Ambil Jadwal</button>
+          </div>
+        </div>
+        <p class="muted">
+          <span data-i18n="jadwal.source">Sumber:</span>
+          <a href="https://aladhan.com/prayer-times-api" target="_blank" rel="noreferrer">Aladhan API</a>
+          — <span data-i18n="jadwal.methodNote">Metode default Kemenag RI (20), bisa diubah di Settings.</span>
+        </p>
+
+        <div class="cols">
+          <input class="input" id="city" placeholder="Nama kota/label (opsional)" data-i18n-placeholder="jadwal.cityPlaceholder">
+          <input class="input" id="adjMin" placeholder="Penyesuaian menit ± (misal 2 atau -2)" inputmode="numeric" data-i18n-placeholder="jadwal.adjPlaceholder">
+        </div>
+
+        <!-- favorit kota -->
+        <div class="hr"></div>
+        <div class="stack">
+          <select id="favSelect" class="input" style="max-width:340px">
+            <option value="" data-i18n="fav.select">— Pilih Kota Favorit —</option>
+          </select>
+          <button class="btn" id="btnFavAdd" data-i18n="fav.add">Tambah ke Favorit</button>
+          <button class="btn warn" id="btnFavDel" data-i18n="fav.del">Hapus Favorit</button>
+        </div>
+
+        <div style="margin:10px 0" class="muted"><span data-i18n="jadwal.coords">Koordinat:</span> <span id="coordText">—</span></div>
+
+        <table class="table" id="tbl">
+          <thead><tr>
+            <th data-i18n="col.waktu">Waktu</th>
+            <th data-i18n="col.jam">Jam</th>
+            <th data-i18n="col.sisa">Sisa</th>
+            <th data-i18n="col.aksi">Aksi</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn success" id="btnAlarmAll" data-i18n="jadwal.alarmAll">Set Alarm Semua</button>
+          <button class="btn warn" id="btnAlarmClear" data-i18n="jadwal.alarmClear">Hapus Semua Alarm</button>
+          <button class="btn" id="btnICS" data-i18n="jadwal.exportICS">Export ICS</button>
+          <span class="pill" id="nextPrayer">—</span>
+        </div>
+      </article>
+    </section>
+  </template>
+
+  <template id="kiblat-tpl">
+    <section class="grid">
+      <article class="card span-6">
+        <h2 data-i18n="kiblat.title">Kompas Kiblat</h2>
+        <p class="muted" data-i18n="kiblat.desc">Jarum biru menunjuk Ka'bah (Makkah). Merah ke selatan geografi (indikatif).</p>
+        <div class="compass-wrap">
+          <div class="ring"></div>
+          <div class="needle" id="needle"></div>
+          <div class="dot"></div>
+        </div>
+        <div class="row"><span data-i18n="kiblat.qdir">Arah Kiblat</span><span class="pill" id="qDir">—</span></div>
+        <div class="row"><span>Heading</span><span class="pill" id="heading">—</span></div>
+        <div class="row"><span>Δ (selisih)</span><span class="pill" id="delta">—</span></div>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn" id="btnCompassPerm" data-i18n="kiblat.sensor">Aktifkan Sensor</button>
+          <button class="btn" id="btnCalibrate" data-i18n="kiblat.calibrate">Kalibrasi</button>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h2 data-i18n="kiblat.coordTitle">Koordinat</h2>
+        <div class="row"><span data-i18n="kiblat.loc">Lokasi</span><span class="pill" id="kLoc">—</span></div>
+        <div class="row"><span data-i18n="kiblat.dist">Jarak ke Ka'bah</span><span class="pill" id="dist">—</span></div>
+        <div class="divider"></div>
+        <h3 style="margin:8px 0 4px" data-i18n="kiblat.tipsTitle">Tip Akurasi</h3>
+        <ul class="list">
+          <li data-i18n="kiblat.tip1">Gerakkan ponsel seperti angka 8 untuk kalibrasi magnetometer.</li>
+          <li data-i18n="kiblat.tip2">Jauhkan dari logam/elektronik besar.</li>
+          <li data-i18n="kiblat.tip3">Izinkan lokasi akurasi tinggi.</li>
+        </ul>
+      </article>
+    </section>
+  </template>
+
+  <template id="kalender-tpl">
+    <section class="grid">
+      <article class="card span-7">
+        <h2 data-i18n="cal.title">Kalender Sholat (7 Hari)</h2>
+        <p class="muted" data-i18n="cal.desc">Tarik jadwal seminggu ke depan sesuai lokasi saat ini.</p>
+        <div class="stack" style="margin-bottom:8px">
+          <button class="btn primary" id="btnFetchWeek" data-i18n="cal.fetchWeek">Ambil 7 Hari</button>
+          <button class="btn" id="btnICSWeek" data-i18n="cal.exportICS">Export ICS (7 Hari)</button>
+        </div>
+        <table class="table" id="tblWeek">
+          <thead><tr>
+            <th data-i18n="cal.tanggal">Tanggal</th>
+            <th>Fajr</th><th>Dhuhr</th><th>Asr</th><th>Maghrib</th><th>Isha</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </article>
+      <article class="card span-5">
+        <h2 data-i18n="cal.countdown">Countdown</h2>
+        <p class="muted" data-i18n="cal.countDesc">Hitung mundur otomatis ke waktu sholat berikutnya.</p>
+        <div class="center" style="min-height:120px">
+          <div>
+            <div class="center" style="font-size:36px; font-weight:700"><span id="cdLabel">—</span></div>
+            <div class="center muted" style="font-size:28px"><span id="cdTime">—</span></div>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn success" id="btnNotif" data-i18n="cal.notif">Izin Notifikasi</button>
+          <button class="btn" id="btnPing" data-i18n="cal.ping">Ping</button>
+        </div>
+        <p class="hint" data-i18n="cal.hint">Notifikasi lokal muncul saat tab aktif. Untuk push/background butuh server/push service.</p>
+      </article>
+    </section>
+  </template>
+
+  <template id="tes-tpl">
+    <section class="grid">
+      <article class="card span-4">
+        <h2 data-i18n="test.audio">Audio Adzan (demo)</h2>
+        <p class="muted" data-i18n="test.audioDesc">Generator tone + Text-to-Speech (bukan rekaman).</p>
+        <div class="stack">
+          <button class="btn success" id="btnTone" data-i18n="test.beep">Beep Lembut</button>
+          <button class="btn" id="btnSpeak" data-i18n="test.sayTakbir">Ucap “Allahu Akbar”</button>
+        </div>
+        <div class="divider"></div>
+        <div class="stack">
+          <button class="btn" id="btnTakbir" data-i18n="test.takbir4">Takbir 4×</button>
+          <button class="btn" id="btnSyahadat" data-i18n="test.shahada">Syahadat</button>
+        </div>
+      </article>
+      <article class="card span-8">
+        <h2 data-i18n="test.bench">Benchmark</h2>
+        <p class="muted" data-i18n="test.benchDesc">Uji kalkulasi JS untuk ukur performa perangkat.</p>
+        <div class="stack">
+          <button class="btn primary" id="btnBench5m">5 juta operasi</button>
+          <button class="btn" id="btnBench50m">50 juta operasi</button>
+          <span class="pill" id="benchOut">—</span>
+        </div>
+        <div class="divider"></div>
+        <h3 style="margin:8px 0 4px" data-i18n="test.cacheTitle">Cache Explorer</h3>
+        <div class="stack">
+          <button class="btn" id="btnListCache" data-i18n="test.cacheList">Daftar Cache</button>
+          <button class="btn warn" id="btnClearCache" data-i18n="test.cacheClear">Bersihkan Cache</button>
+        </div>
+        <pre id="cacheList" class="mono muted" style="white-space:pre-wrap; max-height:240px; overflow:auto;"></pre>
+      </article>
+    </section>
+  </template>
+
+  <template id="settings-tpl">
+    <section class="grid">
+      <article class="card span-6">
+        <h2 data-i18n="set.prefs">Preferensi</h2>
+        <div class="row">
+          <span data-i18n="set.theme">Mode</span>
+          <label class="switch"><input type="checkbox" id="swTheme"><span class="hint">Dark / Light</span></label>
+        </div>
+        <div class="row">
+          <span data-i18n="set.lang">Bahasa</span>
+          <select id="lang" class="input" style="max-width:260px">
+            <option value="id">Indonesia</option>
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+          </select>
+        </div>
+        <div class="row">
+          <span data-i18n="set.method">Metode Hisab</span>
+          <select id="method" class="input" style="max-width:260px">
+            <option value="20">20 – Kemenag RI</option>
+            <option value="2">2 – ISNA</option>
+            <option value="5">5 – Egypt</option>
+            <option value="3">3 – MWL</option>
+            <option value="7">7 – Umm Al-Qura</option>
+          </select>
+        </div>
+        <div class="row">
+          <span data-i18n="set.school">Madzhab Asr</span>
+          <select id="school" class="input" style="max-width:260px">
+            <option value="1">Syafi’i (1× bayangan)</option>
+            <option value="0">Hanafi (2× bayangan)</option>
+          </select>
+        </div>
+        <div class="row">
+          <span data-i18n="set.adjust">Penyesuaian Menit</span>
+          <input id="adjAll" class="input" placeholder="± menit (mis: 2 atau -2)" style="max-width:140px" data-i18n-placeholder="set.adjustPh">
+        </div>
+        <div class="divider"></div>
+        <div class="stack">
+          <button class="btn success" id="btnSaveSettings" data-i18n="set.save">Simpan</button>
+          <button class="btn ghost" id="btnResetSettings" data-i18n="set.reset">Reset</button>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h2 data-i18n="set.dataTitle">Data & Backup</h2>
+        <div class="stack">
+          <button class="btn" id="btnExportJSON" data-i18n="set.export">Export JSON</button>
+          <button class="btn" id="btnImportJSON" data-i18n="set.import">Import JSON</button>
+          <input type="file" id="fileJSON" accept="application/json" class="sr-only">
+        </div>
+        <p class="hint" data-i18n="set.hint">File JSON berisi setting, lokasi, alarm, & favorit kota (tanpa kredensial).</p>
+        <div class="divider"></div>
+        <h3 style="margin:8px 0 4px" data-i18n="set.info">Info</h3>
+        <ul class="list">
+          <li data-i18n="set.info1">Semua data lokal (localStorage & Cache API).</li>
+          <li data-i18n="set.info2">Untuk notifikasi background, gunakan PWA + push server.</li>
+          <li data-i18n="set.info3">Bisa di-host statis (GitHub Pages, Netlify, Vercel, dll.).</li>
+        </ul>
+      </article>
+    </section>
+  </template>
+
+  <template id="tentang-tpl">
+    <section class="grid">
+      <article class="card span-12">
+        <h2 data-i18n="about.title">Tentang</h2>
+        <p data-i18n="about.desc">
+          V3 menambahkan Multi-bahasa, Tema kustom, Daftar kota favorit, Ultra-offline (cache 30 hari), dan perbaikan performa.
+        </p>
+        <ul class="list">
+          <li data-i18n="about.li1">SPA navigasi tab sederhana</li>
+          <li data-i18n="about.li2">Jadwal Sholat via fetch() ke Aladhan (metode & madzhab bisa diganti)</li>
+          <li data-i18n="about.li3">Kompas Kiblat (DeviceOrientation + geodesi)</li>
+          <li data-i18n="about.li4">Service Worker: cache offline & fallback</li>
+          <li data-i18n="about.li5">Alarm lokal + Notifikasi</li>
+          <li data-i18n="about.li6">Kalender 7 hari + Export ICS</li>
+          <li data-i18n="about.li7">Backup/Restore JSON + Favorit kota</li>
+          <li data-i18n="about.li8">Mode gelap/terang + Multi-bahasa</li>
+        </ul>
+        <p class="muted" data-i18n="about.note">
+          Untuk alarm latar belakang penuh, gunakan Android (AlarmManager) atau PWA + Push.
+        </p>
+      </article>
+    </section>
+  </template>
+
+  <!-- ======= SCRIPT BOOTSTRAP (Part 1 hanya bootstrap ringan; fitur penuh di Part 2/3) ======= -->
+  <script>
+    ;(() => {
+      const $ = (sel, root=document) => root.querySelector(sel);
+      const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+
+      // Minimal bootstrap: render awal + year + tabs
+      const routes = {
+        home: () => $('#home-tpl').content.cloneNode(true),
+        jadwal: () => $('#jadwal-tpl').content.cloneNode(true),
+        kiblat: () => $('#kiblat-tpl').content.cloneNode(true),
+        kalender: () => $('#kalender-tpl').content.cloneNode(true),
+        tes: () => $('#tes-tpl').content.cloneNode(true),
+        settings: () => $('#settings-tpl').content.cloneNode(true),
+        tentang: () => $('#tentang-tpl').content.cloneNode(true),
+      };
+
+      const app = $('#app');
+      function render(route='home'){
+        app.innerHTML='';
+        app.appendChild(routes[route]());
+        $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
+      }
+      function goto(route){ window.location.hash = route; render(route); }
+
+      $('#tabs').addEventListener('click', e=>{
+        const b = e.target.closest('.tab,[data-goto]');
+        if(!b) return;
+        const r = b.dataset.route || b.dataset.goto;
+        if(r) goto(r);
+      });
+
+      // Tahun footer
+      $('#y').textContent = String(new Date().getFullYear());
+
+      // Tema awal dari data-theme
+      const mode = document.documentElement.getAttribute('data-theme') || 'dark';
+      $('#modeBadge').textContent = mode === 'light' ? 'Light' : 'Dark';
+
+      // Service worker akan diregister di Part 2
+      // I18n + Settings + Alarm + API + Kompas + Kalender juga di Part 2/3
+
+      // Render awal
+      const hash = (location.hash||'#home').slice(1);
+      render(routes[hash] ? hash : 'home');
+
+      window.addEventListener('hashchange', ()=>{
+        const r = (location.hash||'#home').slice(1);
+        render(routes[r] ? r : 'home');
+      });
+    })();
+ <!-- ======= V3 — PART 2/3: FEATURE SCRIPT ======= -->
+<script>
+;(() => {
+  // ========= DOM helpers =========
+  const $  = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+  const on = (el, ev, cb) => el && el.addEventListener(ev, cb);
+  const fmt2 = n => n<10 ? '0'+n : ''+n;
+  const save = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
+  const load = (k,d=null)=>{try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}};
+  const log = (...a) => { const el = $('#log'); if(!el) return; const t = new Date().toLocaleTimeString(); el.textContent = `[${t}] ${a.join(' ')}\n` + el.textContent; };
+  const toast = (msg, type='') => {
+    const box = $('#toast'); if(!box) return;
+    const item = document.createElement('div'); item.className = 'item'; item.textContent = msg;
+    if(type==='ok')   item.style.borderColor = '#16a34a';
+    if(type==='warn') item.style.borderColor = '#d97706';
+    if(type==='err')  item.style.borderColor = '#ef4444';
+    box.appendChild(item); setTimeout(()=> item.remove(), 4000);
+  };
+  const pill = (id, text)=>{ const s=document.createElement('span'); s.id=id; s.className='pill'; s.textContent=text; return s; };
+  const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${fmt2(d.getMonth()+1)}-${fmt2(d.getDate())}`; };
+  const download = (name, content, type='text/plain') => { const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1500); };
+
+  // ========= I18N =========
+  const I18N = {
+    id: {
+      'tab.home':'Home','tab.jadwal':'Jadwal','tab.kiblat':'Kiblat','tab.kalender':'Kalender','tab.tes':'Tes','tab.settings':'Settings','tab.tentang':'Tentang',
+      'home.welcome':'Selamat datang 👋','home.desc':'Aplikasi single-file berisi Jadwal Sholat, Kompas Kiblat, Alarm Adzan, Kalender, Export ICS, Offline caching, Multi-bahasa, dan Tema. Cukup file index.html ini saja.',
+      'home.openSchedule':'➡️ Jadwal Hari Ini','home.openQibla':'🧭 Kompas Kiblat','home.openCalendar':'📅 Kalender','home.install':'⬇️ Pasang ke Home',
+      'home.tips':'Tips: Izinkan Lokasi & Arah Perangkat agar akurat.','home.status':'Status','home.loc':'Lokasi','home.cache':'Offline Cache','home.alarm':'Alarm','home.notif':'Notifikasi','home.sensorPerm':'Izin Arah','home.getLoc':'Ambil Lokasi','home.reset':'Reset App','home.log':'Log',
+      'jadwal.title':'Jadwal Sholat Hari Ini','jadwal.useGPS':'Gunakan GPS','jadwal.fetch':'Ambil Jadwal','jadwal.source':'Sumber:','jadwal.methodNote':'Metode default Kemenag RI (20), bisa diubah di Settings.','jadwal.coords':'Koordinat:','jadwal.alarmAll':'Set Alarm Semua','jadwal.alarmClear':'Hapus Semua Alarm','jadwal.exportICS':'Export ICS',
+      'jadwal.cityPlaceholder':'Nama kota/label (opsional)','jadwal.adjPlaceholder':'Penyesuaian menit ± (misal 2 atau -2)',
+      'fav.select':'— Pilih Kota Favorit —','fav.add':'Tambah ke Favorit','fav.del':'Hapus Favorit',
+      'col.waktu':'Waktu','col.jam':'Jam','col.sisa':'Sisa','col.aksi':'Aksi',
+      'kiblat.title':'Kompas Kiblat','kiblat.desc':'Jarum biru menunjuk Ka\\\'bah (Makkah). Merah ke selatan geografi (indikatif).','kiblat.qdir':'Arah Kiblat','kiblat.coordTitle':'Koordinat','kiblat.loc':'Lokasi','kiblat.dist':'Jarak ke Ka\\\'bah','kiblat.tipsTitle':'Tip Akurasi','kiblat.tip1':'Gerakkan ponsel seperti angka 8 untuk kalibrasi magnetometer.','kiblat.tip2':'Jauhkan dari logam/elektronik besar.','kiblat.tip3':'Izinkan lokasi akurasi tinggi.','kiblat.sensor':'Aktifkan Sensor','kiblat.calibrate':'Kalibrasi',
+      'cal.title':'Kalender Sholat (7 Hari)','cal.desc':'Tarik jadwal seminggu ke depan sesuai lokasi saat ini.','cal.fetchWeek':'Ambil 7 Hari','cal.exportICS':'Export ICS (7 Hari)','cal.tanggal':'Tanggal','cal.countdown':'Countdown','cal.countDesc':'Hitung mundur otomatis ke waktu sholat berikutnya.','cal.notif':'Izin Notifikasi','cal.ping':'Ping','cal.hint':'Notifikasi lokal muncul saat tab aktif. Untuk push/background butuh server/push service.',
+      'test.audio':'Audio Adzan (demo)','test.audioDesc':'Generator tone + Text-to-Speech (bukan rekaman).','test.beep':'Beep Lembut','test.sayTakbir':'Ucap “Allahu Akbar”','test.takbir4':'Takbir 4×','test.shahada':'Syahadat','test.bench':'Benchmark','test.benchDesc':'Uji kalkulasi JS untuk ukur performa perangkat.','test.cacheTitle':'Cache Explorer','test.cacheList':'Daftar Cache','test.cacheClear':'Bersihkan Cache',
+      'set.prefs':'Preferensi','set.theme':'Mode','set.lang':'Bahasa','set.method':'Metode Hisab','set.school':'Madzhab Asr','set.adjust':'Penyesuaian Menit','set.adjustPh':'± menit (mis: 2 atau -2)','set.save':'Simpan','set.reset':'Reset','set.dataTitle':'Data & Backup','set.export':'Export JSON','set.import':'Import JSON','set.hint':'File JSON berisi setting, lokasi, alarm, & favorit kota (tanpa kredensial).','set.info':'Info','set.info1':'Semua data lokal (localStorage & Cache API).','set.info2':'Untuk notifikasi background, gunakan PWA + push server.','set.info3':'Bisa di-host statis (GitHub Pages, Netlify, Vercel, dll.).',
+      'about.title':'Tentang','about.desc':'V3 menambahkan Multi-bahasa, Tema kustom, Daftar kota favorit, Ultra-offline (cache 30 hari), dan perbaikan performa.','about.li1':'SPA navigasi tab sederhana','about.li2':'Jadwal Sholat via fetch() ke Aladhan (metode & madzhab bisa diganti)','about.li3':'Kompas Kiblat (DeviceOrientation + geodesi)','about.li4':'Service Worker: cache offline & fallback','about.li5':'Alarm lokal + Notifikasi','about.li6':'Kalender 7 hari + Export ICS','about.li7':'Backup/Restore JSON + Favorit kota','about.li8':'Mode gelap/terang + Multi-bahasa','about.note':'Untuk alarm latar belakang penuh, gunakan Android (AlarmManager) atau PWA + Push.'
+    },
+    en: {
+      'tab.home':'Home','tab.jadwal':'Schedule','tab.kiblat':'Qibla','tab.kalender':'Calendar','tab.tes':'Test','tab.settings':'Settings','tab.tentang':'About',
+      'home.welcome':'Welcome 👋','home.desc':'Single-file app: Prayer times, Qibla compass, Adhan alarm, Calendar, ICS export, offline caching, multilingual, theming. Just this index.html.',
+      'home.openSchedule':'➡️ Today\\\'s Schedule','home.openQibla':'🧭 Qibla Compass','home.openCalendar':'📅 Calendar','home.install':'⬇️ Add to Home',
+      'home.tips':'Tip: Allow Location & Device Orientation.','home.status':'Status','home.loc':'Location','home.cache':'Offline Cache','home.alarm':'Alarm','home.notif':'Notification','home.sensorPerm':'Orientation Permission','home.getLoc':'Get Location','home.reset':'Reset App','home.log':'Log',
+      'jadwal.title':'Today\\\'s Prayer Times','jadwal.useGPS':'Use GPS','jadwal.fetch':'Fetch Times','jadwal.source':'Source:','jadwal.methodNote':'Default method is Indonesian Ministry of Religious Affairs (20). Change in Settings.','jadwal.coords':'Coordinates:','jadwal.alarmAll':'Set All Alarms','jadwal.alarmClear':'Clear All Alarms','jadwal.exportICS':'Export ICS',
+      'jadwal.cityPlaceholder':'City/label (optional)','jadwal.adjPlaceholder':'Minute adjust ± (e.g., 2 or -2)',
+      'fav.select':'— Choose Favorite City —','fav.add':'Add Favorite','fav.del':'Delete Favorite',
+      'col.waktu':'Name','col.jam':'Time','col.sisa':'Remaining','col.aksi':'Action',
+      'kiblat.title':'Qibla Compass','kiblat.desc':'Blue needle points to the Ka\\\'bah (Makkah). Red approximates south.','kiblat.qdir':'Qibla Bearing','kiblat.coordTitle':'Coordinates','kiblat.loc':'Location','kiblat.dist':'Distance to Ka\\\'bah','kiblat.tipsTitle':'Accuracy Tips','kiblat.tip1':'Move phone in a figure-eight to calibrate.','kiblat.tip2':'Keep away from large metal/electronics.','kiblat.tip3':'Allow high-accuracy location.','kiblat.sensor':'Enable Sensor','kiblat.calibrate':'Calibrate',
+      'cal.title':'Prayer Calendar (7 days)','cal.desc':'Fetch the next seven days using current location.','cal.fetchWeek':'Fetch 7 Days','cal.exportICS':'Export ICS (7 Days)','cal.tanggal':'Date','cal.countdown':'Countdown','cal.countDesc':'Automatic countdown to the next prayer.','cal.notif':'Request Notification','cal.ping':'Ping','cal.hint':'Local notifications while tab is active. Background push needs server.',
+      'test.audio':'Adhan Audio (demo)','test.audioDesc':'Tone generator + speech synthesis (not a recording).','test.beep':'Soft Beep','test.sayTakbir':'Say “Allahu Akbar”','test.takbir4':'Takbir ×4','test.shahada':'Shahada','test.bench':'Benchmark','test.benchDesc':'Run JS compute to gauge device performance.','test.cacheTitle':'Cache Explorer','test.cacheList':'List Cache','test.cacheClear':'Clear Cache',
+      'set.prefs':'Preferences','set.theme':'Theme','set.lang':'Language','set.method':'Calculation Method','set.school':'Asr School','set.adjust':'Minute Adjustment','set.adjustPh':'± minutes (e.g., 2 or -2)','set.save':'Save','set.reset':'Reset','set.dataTitle':'Data & Backup','set.export':'Export JSON','set.import':'Import JSON','set.hint':'JSON contains settings, location, alarms & favorites (no credentials).','set.info':'Info','set.info1':'Everything is local (localStorage & Cache API).','set.info2':'For background notifications use PWA + push server.','set.info3':'Can be hosted statically (GitHub Pages, Netlify, Vercel, etc).',
+      'about.title':'About','about.desc':'V3 adds multilingual, custom themes, favorite cities, ultra-offline (30-day cache), and perf tweaks.','about.li1':'Simple tab SPA','about.li2':'Prayer via fetch() to Aladhan (configurable method & school)','about.li3':'Qibla compass (DeviceOrientation + geodesy)','about.li4':'Service Worker: offline cache & fallback','about.li5':'Local alarms + Notification','about.li6':'7-day calendar + ICS export','about.li7':'Backup/Restore JSON + favorites','about.li8':'Dark/Light + Multilingual','about.note':'Use Android AlarmManager or PWA + Push for full background alarms.'
+    },
+    ar: {
+      'tab.home':'الصفحة الرئيسية','tab.jadwal':'المواقيت','tab.kiblat':'القبلة','tab.kalender':'التقويم','tab.tes':'اختبار','tab.settings':'الإعدادات','tab.tentang':'حول',
+      'home.welcome':'مرحبًا 👋','home.desc':'تطبيق ملف واحد: مواقيت الصلاة، بوصلة القبلة، منبه الأذان، التقويم، تصدير ICS، العمل دون اتصال، متعدد اللغات، السمات.',
+      'home.openSchedule':'➡️ مواقيت اليوم','home.openQibla':'🧭 بوصلة القبلة','home.openCalendar':'📅 التقويم','home.install':'⬇️ تثبيت على الشاشة الرئيسية',
+      'home.tips':'نصيحة: اسمح بالموقع واتجاه الجهاز.','home.status':'الحالة','home.loc':'الموقع','home.cache':'ذاكرة التخزين المؤقت','home.alarm':'المنبه','home.notif':'الإشعارات','home.sensorPerm':'إذن الاتجاه','home.getLoc':'احصل على الموقع','home.reset':'إعادة ضبط','home.log':'السجل',
+      'jadwal.title':'مواقيت الصلاة لليوم','jadwal.useGPS':'استخدم GPS','jadwal.fetch':'جلب المواقيت','jadwal.source':'المصدر:','jadwal.methodNote':'الطريقة الافتراضية (20). يمكن تغييره في الإعدادات.','jadwal.coords':'الإحداثيات:','jadwal.alarmAll':'تعيين جميع المنبهات','jadwal.alarmClear':'مسح جميع المنبهات','jadwal.exportICS':'تصدير ICS',
+      'jadwal.cityPlaceholder':'المدينة/الوصف (اختياري)','jadwal.adjPlaceholder':'تعديل الدقائق ±',
+      'fav.select':'— اختر مدينة مفضلة —','fav.add':'إضافة للمفضلة','fav.del':'حذف المفضلة',
+      'col.waktu':'الصلاة','col.jam':'الوقت','col.sisa':'المتبقي','col.aksi':'الإجراء',
+      'kiblat.title':'بوصلة القبلة','kiblat.desc':'الإبرة الزرقاء تشير إلى الكعبة (مكة). الحمراء تقريب للجنوب.','kiblat.qdir':'اتجاه القبلة','kiblat.coordTitle':'الإحداثيات','kiblat.loc':'الموقع','kiblat.dist':'المسافة إلى الكعبة','kiblat.tipsTitle':'نصائح الدقة','kiblat.tip1':'حرّك الهاتف على شكل الرقم 8 للمعايرة.','kiblat.tip2':'ابتعد عن المعادن والأجهزة الكبيرة.','kiblat.tip3':'اسمح بموقع عالي الدقة.','kiblat.sensor':'تفعيل المستشعر','kiblat.calibrate':'معايرة',
+      'cal.title':'تقويم الصلاة (7 أيام)','cal.desc':'جلب الأيام السبعة القادمة حسب الموقع الحالي.','cal.fetchWeek':'جلب 7 أيام','cal.exportICS':'تصدير ICS (7 أيام)','cal.tanggal':'التاريخ','cal.countdown':'العد التنازلي','cal.countDesc':'عد تنازلي تلقائي للصلاة التالية.','cal.notif':'طلب الإشعارات','cal.ping':'تنبيه','cal.hint':'الإشعارات المحلية أثناء فتح التبويب. للدفع الخلفي يلزم خادم.',
+      'test.audio':'أذان (تجريبي)','test.audioDesc':'مولّد نغمة + تحويل النص إلى كلام.','test.beep':'صفير ناعم','test.sayTakbir':'قل “الله أكبر”','test.takbir4':'تكبير ×4','test.shahada':'الشهادة','test.bench':'اختبار الأداء','test.benchDesc':'اختبار حسابات جافاسكربت.','test.cacheTitle':'مستكشف التخزين المؤقت','test.cacheList':'عرض الذاكرة المؤقتة','test.cacheClear':'مسح الذاكرة المؤقتة',
+      'set.prefs':'التفضيلات','set.theme':'السمة','set.lang':'اللغة','set.method':'طريقة الحساب','set.school':'مذهب العصر','set.adjust':'تعديل الدقائق','set.adjustPh':'± دقائق','set.save':'حفظ','set.reset':'إعادة ضبط','set.dataTitle':'البيانات والنسخ الاحتياطي','set.export':'تصدير JSON','set.import':'استيراد JSON','set.hint':'يحتوي JSON على الإعدادات والموقع والمنبهات والمدن المفضلة.','set.info':'معلومات','set.info1':'كل شيء محلي.','set.info2':'للإشعارات الخلفية استخدم PWA + push.','set.info3':'يمكن الاستضافة الثابتة.',
+      'about.title':'حول','about.desc':'إضافة لغات متعددة، سمات مخصصة، مدن مفضلة، وضع دون اتصال 30 يومًا، وتحسين الأداء.','about.li1':'تطبيق بعلامات تبويب','about.li2':'مواقيت عبر Aladhan','about.li3':'بوصلة القبلة','about.li4':'خدمة عامل للتخزين المؤقت','about.li5':'منبه محلي + إشعارات','about.li6':'تقويم 7 أيام + ICS','about.li7':'نسخ احتياطي/استعادة + مفضلات','about.li8':'داكن/فاتح + متعدد اللغات','about.note':'للمنبه الخلفي الكامل استخدم Android AlarmManager أو PWA + Push.'
+    }
+  };
+
+  // ========= Global state =========
+  const state = {
+    coords: load('coords'),
+    settings: load('settings', { theme: (document.documentElement.getAttribute('data-theme')==='light'?'light':'dark'), lang:'id', method:20, school:1, adjAll:0 }),
+    alarms: load('alarms', []),
+    favorites: load('favorites', []), // {name, lat, lon}
+    weekCache: load('weekCache', null), // [{date, timings}]
+    notif: (typeof Notification!=='undefined' ? Notification.permission : 'default'),
+    qiblaBearing: null,
+    heading: null,
+    beforeInstallPrompt: null
+  };
+
+  // ========= I18n apply =========
+  function applyI18n(){
+    const dict = I18N[state.settings.lang] || I18N.id;
+    $$('[data-i18n]').forEach(el=>{
+      const key = el.getAttribute('data-i18n'); if(dict[key]) el.textContent = dict[key];
+    });
+    $$('[data-i18n-placeholder]').forEach(el=>{
+      const key = el.getAttribute('data-i18n-placeholder'); if(dict[key]) el.setAttribute('placeholder', dict[key]);
+    });
+    const appname = $('#i18n-appname'); if(appname) appname.textContent = (dict['i18n.appname']||'Jadwal Sholat');
+    // Tabs labels already covered with data-i18n
+  }
+
+  // ========= Theme =========
+  function applyTheme(){
+    document.documentElement.setAttribute('data-theme', state.settings.theme==='light'?'light':'dark');
+    const mb = $('#modeBadge'); if(mb) mb.textContent = state.settings.theme==='light'?'Light':'Dark';
+  }
+  applyTheme(); applyI18n();
+
+  // ========= Service Worker v3 (inline) =========
+  const SW_CODE = `
+    const NAME='ria-cache-v3';
+    const CORE=[self.registration.scope];
+    self.addEventListener('install',e=>{e.waitUntil(caches.open(NAME).then(c=>c.addAll(CORE))); self.skipWaiting();});
+    self.addEventListener('activate',e=>{e.waitUntil((async()=>{const ks=await caches.keys(); await Promise.all(ks.filter(k=>k!==NAME).map(k=>caches.delete(k))); self.clients.claim();})());});
+    self.addEventListener('fetch',e=>{
+      if(e.request.method!=='GET') return;
+      const url=new URL(e.request.url);
+      if(url.origin===location.origin){
+        e.respondWith((async()=>{
+          const cc=await caches.match(e.request); if(cc) return cc;
+          try{ const r=await fetch(e.request); const c=await caches.open(NAME); c.put(e.request,r.clone()); return r; }catch(err){ return cc??new Response('<h1>Offline</h1>',{headers:{'Content-Type':'text/html'}}); }
+        })());
+        return;
+      }
+      // network-first for cross-origin (APIs)
+      e.respondWith((async()=>{ try{ return await fetch(e.request); }catch(err){ const cc=await caches.match(e.request); return cc??new Response(JSON.stringify({error:'offline'}),{headers:{'Content-Type':'application/json'}}); } })());
+    });
+  `;
+  async function registerSW(){
+    if(!('serviceWorker' in navigator)) return;
+    try{
+      const blob = new Blob([SW_CODE], {type:'text/javascript'});
+      const url = URL.createObjectURL(blob);
+      await navigator.serviceWorker.register(url, {scope:'./'});
+      $('#stSW')?.replaceWith(pill('stSW','Aktif'));
+      setTimeout(async()=>{
+        const c = await caches.open('ria-cache-v3'); const keys = await c.keys();
+        $('#stCache')?.replaceWith(pill('stCache', keys.length?`${keys.length} item`:'Siap'));
+      }, 600);
+      log('SW v3 terdaftar');
+    }catch(e){ log('SW gagal:', e); }
+  }
+  registerSW();
+
+  // ========= Geolocation =========
+  function fmtCoord(c){ return c ? `${c.lat.toFixed(6)}, ${c.lon.toFixed(6)} ±${Math.round(c.acc||0)}m` : '—'; }
+  async function getCoords(){
+    return new Promise((res, rej)=>{
+      if(!('geolocation' in navigator)) return rej('Geolocation tidak tersedia');
+      navigator.geolocation.getCurrentPosition(
+        p=> res({lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy}),
+        err=> rej(err.message),
+        {enableHighAccuracy:true, timeout:20000, maximumAge:0}
+      );
+    });
+  }
+
+  // ========= Qibla / Geodesy =========
+  const toRad = d=> d*Math.PI/180, toDeg = r=> r*180/Math.PI;
+  function initialBearing(from, to){
+    const φ1=toRad(from.lat), φ2=toRad(to.lat), Δλ=toRad(to.lon-from.lon);
+    const y=Math.sin(Δλ)*Math.cos(φ2);
+    const x=Math.cos(φ1)*Math.cos(φ2)*Math.cos(Δλ)+Math.sin(φ1)*Math.sin(φ2);
+    return ((toDeg(Math.atan2(y,x))+360)%360);
+  }
+  function haversine(a,b){
+    const R=6371e3; const φ1=toRad(a.lat), φ2=toRad(b.lat); const dφ=toRad(b.lat-a.lat), dλ=toRad(b.lon-a.lon);
+    const s=Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2; return 2*R*Math.asin(Math.sqrt(s));
+  }
+  const KAABA = {lat:21.422487, lon:39.826206};
+
+  let orientationHandler=null;
+  async function requestOrientationPermission(){
+    if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
+      try{ return (await DeviceOrientationEvent.requestPermission())==='granted'; }catch{ return false; }
+    }
+    return true;
+  }
+  function startOrientation(){
+    stopOrientation();
+    orientationHandler = ev=>{
+      const alpha = ev.absolute ? ev.alpha : (ev.webkitCompassHeading ?? (360 - (ev.alpha ?? 0)));
+      const hdg = (alpha ?? 0);
+      state.heading = (((hdg%360)+360)%360);
+      updateCompass();
+    };
+    window.addEventListener('deviceorientation', orientationHandler);
+  }
+  function stopOrientation(){ if(orientationHandler){ window.removeEventListener('deviceorientation', orientationHandler); orientationHandler=null; } }
+  function updateCompass(){
+    const needle=$('#needle'), qDir=$('#qDir'), heading=$('#heading'), delta=$('#delta'); if(!needle) return;
+    const q=state.qiblaBearing??0, h=state.heading??0, d=((q-h+540)%360)-180;
+    needle.style.transform = `translate(-50%,-50%) rotate(${h}deg)`;
+    if(qDir) qDir.textContent = `${q.toFixed(1)}°`; if(heading) heading.textContent = `${h.toFixed(1)}°`; if(delta) delta.textContent = `${d.toFixed(1)}°`;
+  }
+
+  // ========= API Aladhan =========
+  async function fetchTimings(coords, method=20, school=1, tsSec=null){
+    const ts = tsSec ?? Math.floor(Date.now()/1000);
+    const url = `https://api.aladhan.com/v1/timings/${ts}?latitude=${coords.lat}&longitude=${coords.lon}&method=${method}&school=${school}`;
+    const r = await fetch(url); const j = await r.json(); if(j.code!==200) throw new Error('API error'); return j.data;
+  }
+  async function fetchByDate(coords, method, school, ymd){ // ymd: YYYY-MM-DD local
+    const [Y,M,D] = ymd.split('-').map(Number); const dt=new Date(Y,M-1,D,12,0,0); const ts=Math.floor(dt.getTime()/1000);
+    return fetchTimings(coords, method, school, ts);
+  }
+
+  // ========= Timings helpers =========
+  function toMillisToday(hhmm){ const [H,M]=hhmm.split(':').map(Number); const d=new Date(); d.setHours(H,M,0,0); return d.getTime(); }
+  function adjTime(hhmm, deltaMin=0){ const [H,M]=hhmm.split(':').map(Number); const d=new Date(); d.setHours(H,M,0,0); d.setMinutes(d.getMinutes()+deltaMin); return `${fmt2(d.getHours())}:${fmt2(d.getMinutes())}`; }
+  function nextPrayerFrom(timings){
+    const order=['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha']; const now=Date.now();
+    for(const k of order){ const t=toMillisToday(timings[k]); if(t>now) return {name:k, ts:t}; }
+    return {name:'Fajr (besok)', ts: toMillisToday(timings['Fajr'])+86400000};
+  }
+  function msecToHMS(ms){ if(ms<0) return '—'; const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000), s=Math.floor((ms%60000)/1000); return `${h}j ${m}m ${s}d`; }
+
+  // ========= Ultra-offline 30 hari =========
+  function cacheDay(ymd, timings){ const map = load('timings30', {}); map[ymd]=timings; save('timings30', map); }
+  function getCachedDay(ymd){ const map = load('timings30', {}); return map[ymd]||null; }
+  async function getOrFetchDay(ymd, coords){
+    const cached = getCachedDay(ymd); if(cached) return cached;
+    const data = await fetchByDate(coords, state.settings.method, state.settings.school, ymd);
+    cacheDay(ymd, data.timings); return data.timings;
+  }
+
+  // ========= Notifications & Alarms =========
+  async function requestNotif(){
+    if(!('Notification' in window)) { toast('Browser tidak dukung Notification','warn'); return 'denied'; }
+    const res = await Notification.requestPermission(); state.notif=res; $('#stNotif')?.replaceWith(pill('stNotif',res)); return res;
+  }
+  function notify(msg){
+    try{
+      if('Notification' in window && Notification.permission==='granted'){ new Notification('RIA Sholat',{body:msg}); }
+      else toast(msg,'ok');
+    }catch{ toast(msg,'ok'); }
+  }
+  const timers = {};
+  function setAlarmAt(ts, label, id=(crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))){
+    const now=Date.now(); const delay=Math.max(0, ts-now);
+    if(timers[id]) clearTimeout(timers[id]);
+    timers[id] = setTimeout(()=>{ notify(`Waktunya ${label}`); playTone(); }, delay);
+    const found = state.alarms.find(a=>a.id===id);
+    if(found){ found.ts=ts; found.label=label; } else state.alarms.push({id, ts, label});
+    save('alarms', state.alarms);
+    $('#stAlarm')?.replaceWith(pill('stAlarm', `${state.alarms.length} aktif`));
+    return id;
+  }
+  function clearAlarms(){ for(const k in timers){ clearTimeout(timers[k]); delete timers[k]; } state.alarms=[]; save('alarms', state.alarms); $('#stAlarm')?.replaceWith(pill('stAlarm','—')); }
+  // restore future alarms on load
+  (function restoreAlarms(){ const now=Date.now(); state.alarms.forEach(a=>{ if(a.ts>now) setAlarmAt(a.ts, a.label, a.id); }); })();
+
+  // Tone basic (adzan sintetis versi lengkap di Part 3)
+  function playTone(freq=660, dur=1.0){
+    try{
+      const ac=new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain();
+      o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ac.destination);
+      g.gain.setValueAtTime(.0001, ac.currentTime); g.gain.exponentialRampToValueAtTime(.3, ac.currentTime+.02);
+      g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime+dur-0.1); o.start(); o.stop(ac.currentTime+dur);
+    }catch{}
+  }
+  function speak(text='Allahu Akbar'){ if(!('speechSynthesis' in window)) return toast('Speech synthesis tidak tersedia','warn'); const u=new SpeechSynthesisUtterance(text); u.lang='ar-SA'; u.rate=.95; speechSynthesis.speak(u); }
+
+  // ========= ICS =========
+  function icsHeader(calName){
+    return [
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RIA//Jadwal Sholat//ID',`X-WR-CALNAME:${calName}`,'CALSCALE:GREGORIAN'
+    ];
+  }
+  function _icsDTLocal(d){ const Y=d.getFullYear(), M=fmt2(d.getMonth()+1), D=fmt2(d.getDate()), h=fmt2(d.getHours()), m=fmt2(d.getMinutes()), s=fmt2(d.getSeconds()); return `${Y}${M}${D}T${h}${m}${s}`; }
+  function icsEventToday(title, hhmm, durMin=15){
+    const d0=new Date(); const [H,M]=hhmm.split(':').map(Number); d0.setHours(H,M,0,0); const d1=new Date(d0.getTime()+durMin*60000);
+    const uid = (crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2));
+    return ['BEGIN:VEVENT',`UID:${uid}`,`DTSTART:${_icsDTLocal(d0)}`,`DTEND:${_icsDTLocal(d1)}`,`SUMMARY:${title}`,'END:VEVENT'].join('\r\n');
+  }
+  function icsEventDate(title, ymd, hhmm, durMin=15){
+    const [Y,M,D]=ymd.split('-').map(Number); const d0=new Date(Y,M-1,D); const [H,m]=hhmm.split(':').map(Number); d0.setHours(H,m,0,0);
+    const d1=new Date(d0.getTime()+durMin*60000); const uid=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2));
+    return ['BEGIN:VEVENT',`UID:${uid}`,`DTSTART:${_icsDTLocal(d0)}`,`DTEND:${_icsDTLocal(d1)}`,`SUMMARY:${title}`,'END:VEVENT'].join('\r\n');
+  }
+
+  // ========= Rendering glue (override minimal bootstrap events) =========
+  const routes = {
+    home: () => $('#home-tpl').content.cloneNode(true),
+    jadwal: () => $('#jadwal-tpl').content.cloneNode(true),
+    kiblat: () => $('#kiblat-tpl').content.cloneNode(true),
+    kalender: () => $('#kalender-tpl').content.cloneNode(true),
+    tes: () => $('#tes-tpl').content.cloneNode(true),
+    settings: () => $('#settings-tpl').content.cloneNode(true),
+    tentang: () => $('#tentang-tpl').content.cloneNode(true),
+  };
+  const app = $('#app');
+
+  function render(route='home'){
+    app.innerHTML=''; app.appendChild(routes[route]());
+    $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
+    attachHandlers(route);
+    applyI18n();
+    // status badges
+    $('#stLoc')?.replaceWith(pill('stLoc', state.coords ? fmtCoord(state.coords) : '—'));
+    $('#stAlarm')?.replaceWith(pill('stAlarm', state.alarms.length?`${state.alarms.length} aktif`:'—'));
+    $('#stNotif')?.replaceWith(pill('stNotif', state.notif));
+  }
+  function goto(route){ window.location.hash = route; render(route); }
+
+  // Replace tab click listener (ensure one handler)
+  $('#tabs').onclick = (e)=>{
+    const b = e.target.closest('.tab,[data-goto]'); if(!b) return;
+    const r = b.dataset.route || b.dataset.goto; if(r) goto(r);
+  };
+
+  // ========= Handlers per route =========
+  function attachHandlers(route){
+    if(route==='home'){
+      on($('#btnGeo'),'click', async ()=>{
+        try{ const c=await getCoords(); state.coords={lat:c.lat, lon:c.lon, acc:c.acc}; save('coords', state.coords);
+          $('#stLoc')?.replaceWith(pill('stLoc', fmtCoord(state.coords)));
+          toast('Lokasi disimpan','ok'); log('Lokasi:', fmtCoord(state.coords));
+        }catch(e){ toast(String(e),'err'); }
+      });
+      on($('#btnReqPerm'),'click', async ()=>{ const ok=await requestOrientationPermission(); toast(ok?'Izin sensor diberikan':'Izin ditolak', ok?'ok':'warn'); });
+      on($('#btnClear'),'click', ()=>{ localStorage.clear(); state.coords=null; state.alarms=[]; state.weekCache=null; toast('Data dihapus','ok'); render('home'); });
+      // install prompt
+      window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); state.beforeInstallPrompt=e; const btn=$('#btnInstall'); if(btn){ btn.style.display='inline-flex'; btn.onclick=async()=>{ await state.beforeInstallPrompt.prompt(); const ch=await state.beforeInstallPrompt.userChoice; toast('Install: '+ch.outcome,'ok'); }; } });
+    }
+
+    if(route==='jadwal'){
+      $('#coordText').textContent = state.coords? fmtCoord(state.coords) : '—';
+      $('#adjMin').value = String(state.settings.adjAll ?? 0);
+      on($('#btnUseGPS'),'click', async ()=>{ try{ const c=await getCoords(); state.coords={lat:c.lat, lon:c.lon, acc:c.acc}; save('coords', state.coords); $('#coordText').textContent=fmtCoord(state.coords); toast('Lokasi diperbarui','ok'); }catch(e){ toast(String(e),'err'); } });
+      populateFavSelect();
+
+      on($('#btnFavAdd'),'click', async ()=>{
+        try{
+          let name = $('#city').value.trim();
+          if(!state.coords){ const c=await getCoords(); state.coords={lat:c.lat, lon:c.lon, acc:c.acc}; save('coords', state.coords); }
+          if(!name) name = prompt('Nama kota/label favorit?') || '';
+          if(!name) return;
+          state.favorites.push({name, lat:state.coords.lat, lon:state.coords.lon});
+          save('favorites', state.favorites); populateFavSelect(); toast('Ditambahkan ke favorit','ok');
+        }catch(e){ toast('Gagal menambah favorit','err'); }
+      });
+
+      on($('#btnFavDel'),'click', ()=>{
+        const sel = $('#favSelect'); const idx = sel.selectedIndex-1; // because of placeholder
+        if(idx>=0){ state.favorites.splice(idx,1); save('favorites', state.favorites); populateFavSelect(); toast('Favorit dihapus','ok'); }
+      });
+
+      on($('#favSelect'),'change', ()=>{
+        const sel=$('#favSelect'); const idx = sel.selectedIndex-1;
+        if(idx>=0){
+          const f=state.favorites[idx];
+          state.coords={lat:f.lat, lon:f.lon, acc:0}; save('coords', state.coords);
+          $('#coordText').textContent=fmtCoord(state.coords);
+          if(!$('#city').value) $('#city').value=f.name;
+        }
+      });
+
+      on($('#btnFetch'),'click', async ()=>{
+        if(!state.coords){ toast('Ambil lokasi dulu','warn'); return; }
+        const city = $('#city').value.trim();
+        const adj  = parseInt($('#adjMin').value||'0',10) || (state.settings.adjAll||0);
+        try{
+          const data = await fetchTimings(state.coords, state.settings.method, state.settings.school);
+          const tb=$('#tbl tbody'); tb.innerHTML='';
+          const order=['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+          order.forEach(k=>{
+            const t0=data.timings[k], t=adj?adjTime(t0,adj):t0;
+            const tr=document.createElement('tr');
+            tr.innerHTML = `<td>${k}</td><td class="mono">${t}</td><td class="muted">—</td><td><button class="btn" data-time="${t}" data-label="${k}">Alarm</button></td>`;
+            tb.appendChild(tr);
+          });
+          // countdown per row + next
+          setInterval(()=>{
+            const now=Date.now();
+            $$('#tbl tbody tr').forEach(tr=>{
+              const t = toMillisToday($('.mono',tr).textContent);
+              tr.children[2].textContent = t>now ? msecToHMS(t-now) : '—';
+            });
+          }, 1000);
+          const nx = nextPrayerFrom(order.reduce((o,k)=>{o[k]=adj?adjTime(data.timings[k],adj):data.timings[k]; return o;},{}));
+          $('#nextPrayer').textContent = `Berikutnya: ${nx.name} (${new Date(nx.ts).toLocaleTimeString()})` + (city?` • ${city}`:'');
+          // row alarm
+          $('#tbl').onclick = (e)=>{
+            const b=e.target.closest('button[data-time]'); if(!b) return;
+            const ts=toMillisToday(b.dataset.time); const {label}=b.dataset;
+            setAlarmAt(ts, label+(city?` @${city}`:'')); toast(`Alarm set untuk ${label}`,'ok');
+          };
+          on($('#btnAlarmAll'),'click', ()=>{
+            $$('#tbl tbody tr').forEach(r=>{
+              const label=r.children[0].textContent; const t=r.children[1].textContent; setAlarmAt(toMillisToday(t), label+(city?` @${city}`:''));
+            });
+            toast('Semua alarm di-set','ok');
+          });
+          on($('#btnICS'),'click', ()=>{
+            const rows=$$('#tbl tbody tr'); const cal=icsHeader('RIA-HARI-INI');
+            rows.forEach(r=>{
+              const label=r.children[0].textContent; const time=r.children[1].textContent;
+              cal.push(icsEventToday(`${label}${city?` @${city}`:''}`, time, 15));
+            });
+            cal.push('END:VCALENDAR'); download(`RIA_${todayStr()}_${city||'local'}.ics`, cal.join('\r\n'), 'text/calendar');
+          });
+        }catch(e){ toast('Gagal mengambil jadwal','err'); }
+      });
+
+      on($('#btnAlarmClear'),'click', ()=>{ clearAlarms(); toast('Alarm dibersihkan','ok'); });
+    }
+
+    if(route==='kiblat'){
+      (async ()=>{
+        if(!state.coords){ try{ const c=await getCoords(); state.coords={lat:c.lat, lon:c.lon, acc:c.acc}; save('coords', state.coords);}catch{} }
+        $('#kLoc').textContent = state.coords? fmtCoord(state.coords) : '—';
+        if(state.coords){
+          state.qiblaBearing = initialBearing(state.coords, KAABA);
+          $('#qDir').textContent = `${state.qiblaBearing.toFixed(1)}°`;
+          const d=haversine(state.coords, KAABA); $('#dist').textContent = d>1000 ? (d/1000).toFixed(1)+' km' : Math.round(d)+' m';
+          updateCompass();
+        }
+      })();
+      on($('#btnCompassPerm'),'click', async ()=>{ const ok=await requestOrientationPermission(); if(!ok){ toast('Izin orientasi ditolak','warn'); return; } startOrientation(); toast('Sensor aktif','ok'); });
+      on($('#btnCalibrate'),'click', ()=> toast('Gerakkan ponsel seperti angka 8 selama 10 detik','warn'));
+    }
+
+    if(route==='kalender'){
+      on($('#btnFetchWeek'),'click', async ()=>{
+        if(!state.coords){ toast('Ambil lokasi dulu','warn'); return; }
+        const tbody=$('#tblWeek tbody'); tbody.innerHTML='';
+        const cal=[];
+        try{
+          for(let i=0;i<7;i++){
+            const d=new Date(); d.setDate(d.getDate()+i);
+            const y=d.getFullYear(), m=fmt2(d.getMonth()+1), day=fmt2(d.getDate());
+            // ultra-offline: use cache if available
+            let timings = await getOrFetchDay(`${y}-${m}-${day}`, state.coords);
+            const row=document.createElement('tr');
+            row.innerHTML = `<td>${day}-${m}-${y}</td><td class="mono">${timings.Fajr}</td><td class="mono">${timings.Dhuhr}</td><td class="mono">${timings.Asr}</td><td class="mono">${timings.Maghrib}</td><td class="mono">${timings.Isha}</td>`;
+            tbody.appendChild(row);
+            cal.push({date:`${y}-${m}-${day}`, timings});
+          }
+          state.weekCache=cal; save('weekCache', cal);
+          const nx = nextPrayerFrom(cal[0].timings);
+          $('#cdLabel').textContent = `Berikutnya: ${nx.name}`;
+          const upd=()=> $('#cdTime').textContent = msecToHMS(nx.ts - Date.now());
+          upd(); setInterval(upd, 1000);
+        }catch(e){ toast('Gagal ambil 7 hari','err'); }
+      });
+      on($('#btnICSWeek'),'click', ()=>{
+        const cal = state.weekCache || load('weekCache', null);
+        if(!cal){ toast('Ambil jadwal dulu','warn'); return; }
+        const lines=icsHeader('RIA-7HARI');
+        cal.forEach(item=> ['Fajr','Dhuhr','Asr','Maghrib','Isha'].forEach(nm=> lines.push(icsEventDate(nm, item.date, item.timings[nm], 15)) ));
+        lines.push('END:VCALENDAR'); download(`RIA_7hari_${todayStr()}.ics`, lines.join('\r\n'), 'text/calendar');
+      });
+      on($('#btnNotif'),'click', async ()=>{ await requestNotif(); });
+      on($('#btnPing'),'click', ()=> notify('Tes notifikasi berjalan.'));
+    }
+
+    if(route==='tes'){
+      on($('#btnTone'),'click', ()=> playTone(660,1.0));
+      on($('#btnSpeak'),'click', ()=> speak('Allahu Akbar'));
+      on($('#btnTakbir'),'click', ()=> { speak('Allahu Akbar'); setTimeout(()=>speak('Allahu Akbar'),700); setTimeout(()=>speak('Allahu Akbar'),1400); setTimeout(()=>speak('Allahu Akbar'),2100); });
+      on($('#btnSyahadat'),'click', ()=> { speak('Ashhadu alla ilaha illallah'); setTimeout(()=>speak('Ashhadu anna Muhammadan Rasulullah'),1200); });
+      on($('#btnBench5m'),'click', ()=> runBench(5_000_000));
+      on($('#btnBench50m'),'click',()=> runBench(50_000_000));
+      on($('#btnListCache'),'click', listCache);
+      on($('#btnClearCache'),'click', clearCache);
+    }
+
+    if(route==='settings'){
+      // populate
+      $('#swTheme').checked = state.settings.theme==='light';
+      $('#lang').value   = state.settings.lang || 'id';
+      $('#method').value = String(state.settings.method);
+      $('#school').value = String(state.settings.school);
+      $('#adjAll').value = String(state.settings.adjAll ?? 0);
+
+      on($('#btnSaveSettings'),'click', ()=>{
+        state.settings.theme = $('#swTheme').checked ? 'light' : 'dark';
+        state.settings.lang  = $('#lang').value || 'id';
+        state.settings.method = parseInt($('#method').value,10);
+        state.settings.school = parseInt($('#school').value,10);
+        state.settings.adjAll = parseInt($('#adjAll').value||'0',10) || 0;
+        save('settings', state.settings); applyTheme(); applyI18n(); toast('Settings disimpan','ok');
+      });
+      on($('#btnResetSettings'),'click', ()=>{
+        state.settings = { theme:'dark', lang:'id', method:20, school:1, adjAll:0 };
+        save('settings', state.settings); applyTheme(); render('settings'); toast('Settings direset','ok');
+      });
+      on($('#btnExportJSON'),'click', ()=>{
+        const data={ settings:state.settings, coords:state.coords, alarms:state.alarms, favorites:state.favorites };
+        download(`RIA_backup_${todayStr()}.json`, JSON.stringify(data,null,2), 'application/json');
+      });
+      on($('#btnImportJSON'),'click', ()=> $('#fileJSON').click());
+      on($('#fileJSON'),'change', async (e)=>{
+        const f=e.target.files?.[0]; if(!f) return;
+        try{
+          const txt=await f.text(); const js=JSON.parse(txt);
+          if(js.settings) state.settings=js.settings;
+          if(js.coords)   state.coords=js.coords;
+          if(Array.isArray(js.alarms)) state.alarms=js.alarms;
+          if(Array.isArray(js.favorites)) state.favorites=js.favorites;
+          save('settings', state.settings); save('coords', state.coords); save('alarms', state.alarms); save('favorites', state.favorites);
+          toast('Import sukses','ok'); render('settings');
+        }catch{ toast('Import gagal','err'); }
+      });
+    }
+
+    if(route==='tentang'){ /* no-op */ }
+  }
+
+  // ========= Misc utilities =========
+  function runBench(N){ const t0=performance.now(); let s=0; for(let i=0;i<N;i++){ s=(s*1664525 + 1013904223)>>>0; } const t1=performance.now(); $('#benchOut').textContent = `${N.toLocaleString()} ops: ${(t1-t0).toFixed(1)} ms, hash=${s}`; }
+  async function listCache(){ try{ const keys=await caches.keys(); const out=[]; for(const k of keys){ const c=await caches.open(k); const reqs=await c.keys(); out.push(`• ${k} (${reqs.length} item)`); reqs.forEach(r=> out.push('  - '+r.url)); } $('#cacheList').textContent= out.join('\n') || '(kosong)'; }catch{ $('#cacheList').textContent='Cache API tidak tersedia'; } }
+  async function clearCache(){ try{ const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); toast('Cache dihapus','ok'); }catch{ toast('Gagal hapus cache','err'); } }
+  function populateFavSelect(){ const sel=$('#favSelect'); if(!sel) return; sel.innerHTML=''; const opt0=document.createElement('option'); opt0.value=''; opt0.textContent='— Pilih Kota Favorit —'; sel.appendChild(opt0); state.favorites.forEach(f=>{ const o=document.createElement('option'); o.value=`${f.lat},${f.lon}`; o.textContent=f.name; sel.appendChild(o); }); }
+
+  // ========= Initial boot (override Part1 minimal router) =========
+  // Keep current hash route
+  const _route = (location.hash||'#home').slice(1);
+  render(routes[_route]?_route:'home');
+
+  window.addEventListener('hashchange', ()=>{ const r=(location.hash||'#home').slice(1); render(routes[r]?r:'home'); });
+
+  // Update footer year & badges again (in case Part 2 loaded after)
+  $('#y').textContent = String(new Date().getFullYear());
+  $('#stSW')?.replaceWith(pill('stSW','Mendaftar…'));
+  $('#stCache')?.replaceWith(pill('stCache','—'));
+  $('#stAlarm')?.replaceWith(pill('stAlarm', state.alarms.length?`${state.alarms.length} aktif`:'—'));
+  $('#stNotif')?.replaceWith(pill('stNotif', state.notif));
+  log('Part 2 loaded.');
+})();
+<!-- ======= V3 — PART 3/3: ADZAN SINTETIS + PREFETCH 30 HARI + WIDGET ======= -->
+<script>
+;(() => {
+  // Reuse helpers from Part 2 if present
+  const $  = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+  const on = (el, ev, cb) => el && el.addEventListener(ev, cb);
+  const fmt2 = n => n<10 ? '0'+n : ''+n;
+  const save = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
+  const load = (k,d=null)=>{try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}};
+  const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${fmt2(d.getMonth()+1)}-${fmt2(d.getDate())}`; };
+
+  // Pull state from Part 2 if exists, otherwise init minimal (tetap kompatibel)
+  const state = (window.__RIA_STATE__ ||= {
+    settings: load('settings', { theme:'dark', lang:'id', method:20, school:1, adjAll:0 }),
+    coords:   load('coords', null),
+    alarms:   load('alarms', []),
+    favorites:load('favorites', []),
+    weekCache:load('weekCache', null),
+    notif: (typeof Notification!=='undefined'? Notification.permission : 'default'),
+  });
+
+  // =============== UI INJECTION (tambahan tombol & widget agar tak ubah Part 1) ===============
+  function injectWidgetHome(){
+    const home = $('#home-tpl')?.content?.cloneNode(true);
+    if(!home) return; // hanya jika template ada
+    // Sisipkan widget mini countdown ke halaman Home saat render aktual
+    const hook = () => {
+      const container = document.createElement('article');
+      container.className = 'card span-12';
+      container.innerHTML = `
+        <h2>Widget Mini Countdown</h2>
+        <div class="center" style="min-height:100px">
+          <div>
+            <div class="center" style="font-size:28px; font-weight:700"><span id="miniCdLabel">—</span></div>
+            <div class="center muted" style="font-size:22px"><span id="miniCdTime">—</span></div>
+          </div>
+        </div>
+      `;
+      // saat user membuka Home (render runtime)
+      const onRender = () => {
+        const grid = $('.container #app .grid') || $('#app .grid');
+        if(grid && !$('#miniCdLabel')){
+          grid.appendChild(container);
+          startMiniCountdown(); // mulai kalau jadwal hari-ini sudah pernah diambil; kalau belum, tetap idle
+        }
+      };
+      // patch router render (aman idempotent)
+      const _pushState = history.pushState;
+      history.pushState = function(){ _pushState.apply(this, arguments); setTimeout(onRender, 0); };
+      window.addEventListener('hashchange', onRender);
+      // panggil sekali jika kebetulan Home aktif
+      setTimeout(onRender, 0);
+    };
+    hook();
+  }
+
+  function injectKalenderButtons(){
+    // Tambah tombol Prefetch 30 Hari & Export ICS 30 Hari secara dinamis pada saat user buka tab Kalender
+    const onKalender = () => {
+      const isKal = (location.hash||'#').includes('kalender');
+      if(!isKal) return;
+      const ctlRow = $('.container #app #kalender-tpl') ? null : $('#app .grid .card .stack'); // fallback: DOM sudah jadi
+      // Cari lokasi tombol "Ambil 7 Hari"
+      const btnFetchWeek = $('#btnFetchWeek');
+      if(btnFetchWeek && !$('#btnPrefetch30')){
+        const wrap = btnFetchWeek.parentElement;
+        const b1 = document.createElement('button'); b1.className='btn'; b1.id='btnPrefetch30'; b1.textContent='Prefetch 30 Hari';
+        const b2 = document.createElement('button'); b2.className='btn'; b2.id='btnICSMonth'; b2.textContent='Export ICS (30 Hari)';
+        wrap.appendChild(b1); wrap.appendChild(b2);
+        // Pasang handler
+        on(b1, 'click', prefetch30Days);
+        on(b2, 'click', exportICSMonth);
+      }
+    };
+    window.addEventListener('hashchange', onKalender);
+    setTimeout(onKalender, 0);
+  }
+
+  // =============== COUNTDOWN MINI (pakai cache hari ini dari Part 2 bila ada) ===============
+  function startMiniCountdown(){
+    const lbl = $('#miniCdLabel'), tim = $('#miniCdTime');
+    if(!lbl || !tim) return;
+    // Ambil jadwal hari ini dari cache 30 hari (kalau sudah ada) atau dari weekCache[0]
+    const map = load('timings30', {});
+    const today = todayStr();
+    let timings = map[today];
+    if(!timings){
+      const week = load('weekCache', null);
+      if(week && week[0] && week[0].timings) timings = week[0].timings;
+    }
+    if(!timings){ lbl.textContent='—'; tim.textContent='—'; return; }
+    const nx = nextPrayerFrom(timings);
+    lbl.textContent = `Berikutnya: ${nx.name}`;
+    const upd = () => tim.textContent = msecToHMS(nx.ts - Date.now());
+    upd(); setInterval(upd, 1000);
+  }
+
+  // Util dari Part 2 (copy kecil biar berdiri sendiri)
+  function toMillisToday(hhmm){ const [H,M]=hhmm.split(':').map(Number); const d=new Date(); d.setHours(H,M,0,0); return d.getTime(); }
+  function msecToHMS(ms){ if(ms<0) return '—'; const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000), s=Math.floor((ms%60000)/1000); return `${h}j ${m}m ${s}d`; }
+  function nextPrayerFrom(timings){
+    const order=['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha']; const now=Date.now();
+    for(const k of order){ const t=toMillisToday(timings[k]); if(t>now) return {name:k, ts:t}; }
+    return {name:'Fajr (besok)', ts: toMillisToday(timings['Fajr'])+86400000};
+  }
+
+  // =============== PREFETCH 30 HARI (ultra-offline) ===============
+  async function prefetch30Days(){
+    try{
+      if(!state.coords){
+        const pos = await new Promise((res, rej)=>{
+          if(!('geolocation' in navigator)) return rej(new Error('Geolocation tidak tersedia'));
+          navigator.geolocation.getCurrentPosition(p => res(p), e => rej(e), {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+        });
+        state.coords = {lat:pos.coords.latitude, lon:pos.coords.longitude, acc:pos.coords.accuracy};
+        save('coords', state.coords);
+      }
+      const coords = state.coords;
+      const settings = state.settings || load('settings', {method:20, school:1});
+      // fungsi fetch per tanggal (copy kecil dari Part 2)
+      const fetchByDate = async (ymd) => {
+        const [Y,M,D] = ymd.split('-').map(Number);
+        const dt = new Date(Y, M-1, D, 12, 0, 0);
+        const ts = Math.floor(dt.getTime()/1000);
+        const url = `https://api.aladhan.com/v1/timings/${ts}?latitude=${coords.lat}&longitude=${coords.lon}&method=${settings.method}&school=${settings.school}`;
+        const r = await fetch(url); const j = await r.json(); if(j.code!==200) throw new Error('API');
+        return j.data.timings;
+      };
+      const map = load('timings30', {});
+      const base = new Date();
+      let ok=0, fail=0;
+      for(let i=0;i<30;i++){
+        const d=new Date(base.getTime()); d.setDate(d.getDate()+i);
+        const ymd = `${d.getFullYear()}-${fmt2(d.getMonth()+1)}-${fmt2(d.getDate())}`;
+        if(map[ymd]) { ok++; continue; }
+        try{
+          const t = await fetchByDate(ymd);
+          map[ymd] = t; ok++;
+        }catch{ fail++; }
+      }
+      save('timings30', map);
+      // Feedback
+      const toast = (msg, type='') => {
+        const box = $('#toast'); if(!box) return;
+        const item = document.createElement('div'); item.className = 'item'; item.textContent = msg;
+        if(type==='ok')   item.style.borderColor = '#16a34a';
+        if(type==='warn') item.style.borderColor = '#d97706';
+        if(type==='err')  item.style.borderColor = '#ef4444';
+        box.appendChild(item); setTimeout(()=> item.remove(), 4000);
+      };
+      toast(`Prefetch 30 hari selesai: ${ok} ok, ${fail} gagal`, fail? 'warn':'ok');
+    }catch(e){
+      const item = document.createElement('div'); item.className='item'; item.textContent='Prefetch gagal';
+      $('#toast')?.appendChild(item); setTimeout(()=> item.remove(), 4000);
+    }
+  }
+
+  function exportICSMonth(){
+    const map = load('timings30', {});
+    const keys = Object.keys(map).sort();
+    if(!keys.length){
+      const item = document.createElement('div'); item.className='item'; item.textContent='Belum ada cache 30 hari. Jalankan Prefetch dulu.';
+      $('#toast')?.appendChild(item); setTimeout(()=> item.remove(), 3800);
+      return;
+    }
+    const fmt2 = n => n<10?'0'+n:''+n;
+    const _icsDTLocal = (d) => {
+      const Y=d.getFullYear(), M=fmt2(d.getMonth()+1), D=fmt2(d.getDate()),
+            h=fmt2(d.getHours()), m=fmt2(d.getMinutes()), s=fmt2(d.getSeconds());
+      return `${Y}${M}${D}T${h}${m}${s}`;
+    };
+    const header = [
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RIA//Jadwal Sholat 30 Hari//ID','X-WR-CALNAME:RIA-30HARI','CALSCALE:GREGORIAN'
+    ];
+    const events = [];
+    keys.forEach(ymd=>{
+      const [Y,M,D] = ymd.split('-').map(Number);
+      ['Fajr','Dhuhr','Asr','Maghrib','Isha'].forEach(nm=>{
+        const [H,Mi] = map[ymd][nm].split(':').map(Number);
+        const d0=new Date(Y,M-1,D,H,Mi,0), d1=new Date(d0.getTime()+15*60000);
+        const uid = (crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2));
+        events.push(
+          'BEGIN:VEVENT',
+          `UID:${uid}`,
+          `DTSTART:${_icsDTLocal(d0)}`,
+          `DTEND:${_icsDTLocal(d1)}`,
+          `SUMMARY:${nm}`,
+          'END:VEVENT'
+        );
+      });
+    });
+    const lines = [...header, ...events, 'END:VCALENDAR'];
+    const blob = new Blob([lines.join('\r\n')], {type:'text/calendar'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `RIA_30hari_${todayStr()}.ics`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  }
+
+  // =============== ADZAN SINTETIS (envelope, vibrato, portamento, “tarannum” sederhana) ===============
+  const AdhanSynth = (function(){
+    let ac=null, master=null, convo=null, gainMain=null, activeNodes=[];
+    function ensureAC(){
+      if(ac) return;
+      ac = new (window.AudioContext||window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = 0.9;
+      gainMain = ac.createGain(); gainMain.gain.value = 0.0; // fade in
+      master.connect(ac.destination);
+      // Convolver: impulse reverb sintetis pendek (mosque-like slapback)
+      convo = ac.createConvolver(); convo.buffer = makeImpulse(1.4, 0.35);
+      gainMain.connect(convo); convo.connect(master);
+    }
+    function makeImpulse(duration=1.5, decay=0.4){
+      const rate = (ac?.sampleRate)||44100;
+      const len = Math.floor(duration*rate);
+      const buf = (ac||{createBuffer:()=>null}).createBuffer(2, len, rate);
+      for(let ch=0; ch<2; ch++){
+        const data = buf.getChannelData(ch);
+        for(let i=0; i<len; i++){
+          data[i] = (Math.random()*2-1) * Math.pow(1-i/len, decay*4);
+        }
+      }
+      return buf;
+    }
+    function envParam(param, atk=0.08, sus=0.85, rel=0.25, maxGain=0.9){
+      const now = ac.currentTime;
+      param.cancelScheduledValues(now);
+      param.setValueAtTime(0.0001, now);
+      param.exponentialRampToValueAtTime(maxGain, now+atk);
+      param.exponentialRampToValueAtTime(maxGain*sus, now+atk+0.08);
+      // release akan dipanggil manual via stopNote
+    }
+    function stopAll(){
+      activeNodes.forEach(n=>{ try{ n.stop(); }catch{} try{ n.disconnect(); }catch{} });
+      activeNodes = [];
+      if(gainMain) { try{
+        const now = ac.currentTime;
+        gainMain.gain.cancelScheduledValues(now);
+        gainMain.gain.linearRampToValueAtTime(0.0, now+0.2);
+      }catch{} }
+    }
+    function startMaster(){
+      ensureAC();
+      const now = ac.currentTime;
+      gainMain.gain.cancelScheduledValues(now);
+      gainMain.gain.linearRampToValueAtTime(0.9, now+0.3);
+    }
+    function oscNote(freq=440, dur=1.5, vibHz=5.5, vibDepth=7){
+      ensureAC();
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      const lfo = ac.createOscillator();
+      const lfoGain = ac.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      lfo.frequency.value = vibHz; lfoGain.gain.value = vibDepth;
+      lfo.connect(lfoGain); lfoGain.connect(o.frequency);
+      o.connect(g); g.connect(gainMain);
+      envParam(g.gain, 0.06, 0.88, 0.2, 0.9);
+      const now = ac.currentTime;
+      o.start(now); lfo.start(now);
+      o.stop(now + dur);
+      // cleanup
+      o.onended = ()=>{ try{ o.disconnect(); g.disconnect(); lfo.disconnect(); lfoGain.disconnect(); }catch{} };
+      activeNodes.push(o);
+    }
+    function glidePhrase(notes, baseVib=5.5, depth=7){
+      // notes: [{f:Hz, t:durSec}] with soft glide via periodic scheduling
+      ensureAC();
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      const lfo = ac.createOscillator();
+      const lfoGain = ac.createGain();
+      o.type = 'sine'; o.frequency.value = (notes[0]?.f)||440;
+      lfo.frequency.value = baseVib; lfoGain.gain.value = depth;
+      lfo.connect(lfoGain); lfoGain.connect(o.frequency);
+      o.connect(g); g.connect(gainMain);
+      envParam(g.gain, 0.08, 0.9, 0.25, 0.95);
+      startMaster();
+      const now = ac.currentTime;
+      let t=now;
+      notes.forEach(n=>{
+        // setTargetAtTime untuk glide halus
+        o.frequency.setTargetAtTime(n.f, t, 0.12);
+        t += n.t;
+      });
+      o.start(now); lfo.start(now);
+      o.stop(t+0.02);
+      activeNodes.push(o);
+    }
+    // Tarannum sederhana untuk frasa adzan
+    function phraseTakbir(){ // "Allahu Akbar" motif naik-turun
+      const A = 440; // referensi
+      glidePhrase([
+        {f:A*1.122, t:0.5},
+        {f:A*1.059, t:0.6},
+        {f:A*1.189, t:0.5},
+        {f:A*1.059, t:0.6},
+        {f:A*1.000, t:0.5},
+      ], 5.3, 9);
+    }
+    function phraseShahada(){
+      const A=440;
+      glidePhrase([
+        {f:A*0.944, t:0.7},
+        {f:A*1.000, t:0.7},
+        {f:A*1.059, t:0.9},
+        {f:A*1.000, t:0.9},
+        {f:A*0.944, t:1.0},
+      ], 5.0, 8);
+    }
+    function phraseHayya(){
+      const A=440;
+      glidePhrase([
+        {f:A*1.000, t:0.7},
+        {f:A*1.122, t:0.8},
+        {f:A*1.059, t:0.9},
+        {f:A*1.189, t:1.0},
+      ], 5.7, 10);
+    }
+    function phraseFalah(){
+      const A=440;
+      glidePhrase([
+        {f:A*0.944, t:0.8},
+        {f:A*1.000, t:0.8},
+        {f:A*1.059, t:0.9},
+        {f:A*1.122, t:1.0},
+      ], 5.2, 8);
+    }
+    function phraseTawhid(){
+      const A=440;
+      glidePhrase([
+        {f:A*1.000, t:0.9},
+        {f:A*0.944, t:0.9},
+        {f:A*1.000, t:1.0},
+      ], 5.0, 7);
+    }
+    function playAdhanFull(){
+      startMaster();
+      let t=0;
+      const seq = [
+        {fn: phraseTakbir,  gap: 900},
+        {fn: phraseTakbir,  gap: 900},
+        {fn: phraseShahada, gap: 1200},
+        {fn: phraseShahada, gap: 1200},
+        {fn: phraseHayya,   gap: 1300},
+        {fn: phraseHayya,   gap: 1300},
+        {fn: phraseFalah,   gap: 1300},
+        {fn: phraseFalah,   gap: 1300},
+        {fn: phraseTakbir,  gap: 900},
+        {fn: phraseTawhid,  gap: 1500},
+      ];
+      seq.forEach(step=>{
+        setTimeout(()=> step.fn(), t);
+        t += step.gap;
+      });
+    }
+    return { ensureAC, startMaster, stopAll, oscNote, glidePhrase, playAdhanFull, phraseTakbir };
+  })();
+
+  // =============== HOOK ke UI (Tes tab) ===============
+  function attachTesExtras(){
+    // Tambah 2 tombol di Tes tab: "Adzan Sintetis (Full)" & "Stop Audio"
+    const onTes = () => {
+      const isTes = (location.hash||'#').includes('tes');
+      if(!isTes) return;
+      const stack = $('#btnTone')?.closest('.stack');
+      if(stack && !$('#btnAdhanFull')){
+        const bFull = document.createElement('button'); bFull.className='btn success'; bFull.id='btnAdhanFull'; bFull.textContent='Adzan Sintetis (Full)';
+        const bStop = document.createElement('button'); bStop.className='btn warn'; bStop.id='btnStopAudio'; bStop.textContent='Stop Audio';
+        stack.parentElement.appendChild(document.createElement('div')).className='divider';
+        stack.parentElement.appendChild((()=>{ const s=document.createElement('div'); s.className='stack'; s.appendChild(bFull); s.appendChild(bStop); return s; })());
+        on(bFull, 'click', ()=> AdhanSynth.playAdhanFull());
+        on(bStop, 'click', ()=> AdhanSynth.stopAll());
+      }
+    };
+    window.addEventListener('hashchange', onTes);
+    setTimeout(onTes, 0);
+  }
+
+  // =============== SHORTCUTS ===============
+  document.addEventListener('keydown', (e)=>{
+    if(e.altKey && e.key.toLowerCase()==='a'){ // Alt+A -> main adzan
+      e.preventDefault(); AdhanSynth.playAdhanFull();
+    }
+    if(e.altKey && e.key.toLowerCase()==='s'){ // Alt+S -> stop
+      e.preventDefault(); AdhanSynth.stopAll();
+    }
+  });
+
+  // =============== PADDING AMAN (util non-kritis, membantu DX & uji) ===============
+  // Generator tabel debug cache 30-hari (akses dari console: RIA.debugMonth())
+  const RIA = (window.RIA ||= {});
+  RIA.debugMonth = function(){
+    const m = load('timings30', {});
+    const keys = Object.keys(m).sort();
+    console.table(keys.map(k=>({date:k, ...m[k]})));
+    return keys.length;
+  };
+  RIA.prefetch30Days = prefetch30Days;
+  RIA.exportICSMonth = exportICSMonth;
+  RIA.stopAudio = () => AdhanSynth.stopAll();
+  RIA.playTakbir = () => AdhanSynth.phraseTakbir();
+  window.__RIA_STATE__ = state; // expose untuk devtools
+
+  // =============== BOOT PART 3 ===============
+  injectWidgetHome();
+  injectKalenderButtons();
+  attachTesExtras();
+
+  // opsional: prefetch otomatis ringan (3 hari) jika belum ada cache & user sudah ambil lokasi
+  try{
+    const map = load('timings30', {});
+    if(state.coords && Object.keys(map).length < 3){
+      (async ()=>{
+        const base = new Date();
+        for(let i=0;i<3;i++){
+          const d=new Date(base.getTime()); d.setDate(d.getDate()+i);
+          const ymd = `${d.getFullYear()}-${fmt2(d.getMonth()+1)}-${fmt2(d.getDate())}`;
+          if(map[ymd]) continue;
+          // fetch cepat
+          const [Y,M,D] = ymd.split('-').map(Number);
+          const dt = new Date(Y, M-1, D, 12, 0, 0);
+          const ts = Math.floor(dt.getTime()/1000);
+          const url = `https://api.aladhan.com/v1/timings/${ts}?latitude=${state.coords.lat}&longitude=${state.coords.lon}&method=${state.settings.method}&school=${state.settings.school}`;
+          const r = await fetch(url); const j = await r.json(); if(j.code===200){ map[ymd]=j.data.timings; save('timings30', map); }
+        }
+      })();
+    }
+  }catch{}
+
+})();
+</script>
+
+</body>
+</html>
