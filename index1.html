@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Jadwal Sholat RIA — Single-File App</title>
+  <meta name="theme-color" content="#0ea5e9" />
+  <meta name="description" content="Jadwal Sholat + Kompas Kiblat + Adzan + Logging. Single-file HTML, tanpa build.">
+
+  <!-- Icons (SVG data URIs so this can stay single-file) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%2315803d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='24' fill='url(%23g)'/%3E%3Cpath d='M64 20l28 20v48a8 8 0 01-8 8H44a8 8 0 01-8-8V40L64 20z' fill='%23fff'/%3E%3Cpath d='M72 96V64a8 8 0 10-16 0v32' stroke='%230ea5e9' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+
+  <!-- Styles -->
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f172a;
+      --muted:#94a3b8;
+      --text:#e6edf3;
+      --brand:#0ea5e9;
+      --brand-2:#22c55e;
+      --warn:#f59e0b;
+      --err:#ef4444;
+      --ring: 0 0 0 3px rgba(14,165,233,.25);
+      --shadow: 0 20px 40px rgba(2,8,23,.4), 0 4px 10px rgba(2,8,23,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Noto Sans", Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #0ea5e933, transparent 60%),
+                  radial-gradient(900px 500px at 100% 10%, #22c55e33, transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{color:var(--brand); text-decoration:none}
+    .container{max-width:1100px; margin:0 auto; padding:24px; }
+    header{
+      position:sticky; top:0; backdrop-filter:saturate(140%) blur(10px);
+      background:linear-gradient(to bottom, rgba(11,18,32,.9), rgba(11,18,32,.65));
+      border-bottom:1px solid #1f2a44; z-index:10;
+    }
+    .nav{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 24px;
+    }
+    .brand{display:flex; gap:12px; align-items:center}
+    .brand .logo{width:32px; height:32px}
+    .brand h1{font-size:18px; margin:0}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      padding:10px 14px; border:1px solid #1e293b; background:#0b1220; color:var(--text);
+      border-radius:999px; cursor:pointer; user-select:none;
+    }
+    .tab.active{background:linear-gradient(180deg,#0ea5e9,#0284c7); border-color:#0284c7}
+    .grid{
+      display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:18px; margin-top:22px;
+    }
+    .card{
+      grid-column: span 12; background:linear-gradient(180deg,#0b1425,#0f172a);
+      border:1px solid #1e293b; border-radius:20px; padding:18px; box-shadow:var(--shadow);
+    }
+    @media (min-width:768px){
+      .span-6{grid-column:span 6}
+      .span-4{grid-column:span 4}
+      .span-8{grid-column:span 8}
+    }
+    h2{margin:0 0 8px 0; font-size:20px}
+    p{color:var(--muted); line-height:1.6}
+    .btn{
+      display:inline-flex; gap:10px; align-items:center; padding:10px 14px; border-radius:12px;
+      border:1px solid #1e293b; background:#0b1220; color:var(--text); cursor:pointer;
+      box-shadow: inset 0 -2px 0 rgba(255,255,255,.04);
+    }
+    .btn.primary{background:linear-gradient(180deg,#0ea5e9,#0284c7); border-color:#0284c7}
+    .btn.success{background:linear-gradient(180deg,#22c55e,#16a34a); border-color:#16a34a}
+    .btn.warn{background:linear-gradient(180deg,#f59e0b,#d97706); border-color:#d97706}
+    .stack{display:flex; gap:10px; flex-wrap:wrap}
+    .kbd{padding:.18rem .5rem; border:1px solid #1f2a44; border-radius:8px; background:#0b1220; color:#9fb3c8}
+    .muted{color:var(--muted)}
+    .mono{font-family:ui-monospace, Menlo, Consolas, "SF Mono", "Roboto Mono", monospace}
+    .list{padding-left:20px}
+    .list li{margin:6px 0}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .pill{padding:.35rem .6rem; border-radius:999px; border:1px solid #1e293b; background:#0b1220; font-size:12px}
+    .badge{padding:.25rem .5rem; border-radius:6px; background:#0ea5e91a; border:1px solid #0ea5e955; color:#9ddfff}
+    .center{display:flex; align-items:center; justify-content:center}
+    .hr{height:1px; background:#1f2a44; margin:16px 0}
+    .table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px; border:1px solid #1e293b}
+    .table th,.table td{padding:10px 12px; border-bottom:1px solid #1e293b; text-align:left}
+    .table th{background:#0b1220; color:#a7c1d9; font-weight:600; position:sticky; top:64px}
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:.35rem .6rem; border-radius:999px; background:#0b1220; border:1px solid #1f2a44}
+    .ok{color:#22c55e} .warnc{color:#f59e0b} .err{color:#ef4444}
+    canvas{max-width:100%}
+    /* Compass */
+    .compass-wrap{position:relative; width:min(380px,90vw); aspect-ratio:1; margin:10px auto}
+    .ring{position:absolute; inset:0; border-radius:50%; border:2px dashed #1f2a44}
+    .needle{position:absolute; left:50%; top:50%; width:0; height:0; transform:translate(-50%,-50%) rotate(0deg); transition:transform .1s linear}
+    .needle::before{
+      content:""; display:block; width:0; height:0;
+      border-left:10px solid transparent; border-right:10px solid transparent;
+      border-bottom:160px solid #0ea5e9; margin-left:-10px; filter:drop-shadow(0 4px 12px rgba(14,165,233,.6));
+    }
+    .needle::after{
+      content:""; display:block; width:0; height:0; transform:translateY(6px);
+      border-left:8px solid transparent; border-right:8px solid transparent;
+      border-top:80px solid #ef4444; margin-left:-8px; filter:drop-shadow(0 2px 8px rgba(239,68,68,.6));
+    }
+    .dot{position:absolute; left:50%; top:50%; width:14px; height:14px; background:#fff; border-radius:50%; transform:translate(-50%,-50%)}
+    /* Footer */
+    footer{opacity:.8; padding:30px 0 60px; text-align:center}
+    /* Toasts */
+    .toast{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px; z-index:50}
+    .toast .item{padding:10px 14px; border-radius:12px; border:1px solid #1f2a44; background:#0b1220; box-shadow:var(--shadow)}
+    /* Inputs */
+    .input{
+      background:#0b1220; border:1px solid #1f2a44; color:var(--text);
+      border-radius:12px; padding:10px 12px; outline:none;
+    }
+    .input:focus{box-shadow:var(--ring); border-color:#0ea5e9}
+    .cols{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">
+        <img class="logo" alt="logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%230ea5e9'/%3E%3Cstop offset='1' stop-color='%2322c55e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='url(%23g)'/%3E%3Cpath d='M16 6l8 6v14a2 2 0 01-2 2H10a2 2 0 01-2-2V12l8-6z' fill='%23fff'/%3E%3C/svg%3E">
+        <h1>Jadwal Sholat <span class="pill">RIA</span></h1>
+      </div>
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-route="home">Home</button>
+        <button class="tab" data-route="jadwal">Jadwal</button>
+        <button class="tab" data-route="kiblat">Kiblat</button>
+        <button class="tab" data-route="tes">Tes</button>
+        <button class="tab" data-route="tentang">Tentang</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="app"></main>
+
+  <footer class="container">
+    <div class="muted">© <span id="y"></span> RIA. Single-file app. <span class="badge">Offline Ready</span> <span class="badge">No Build</span></div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <template id="home-tpl">
+    <section class="grid">
+      <article class="card span-8">
+        <h2>Selamat datang 👋</h2>
+        <p>Aplikasi single-file ini memuat <strong>Jadwal Sholat</strong>, <strong>Kompas Kiblat</strong>, <strong>Alarm Adzan</strong>, dan <strong>Offline caching</strong> lewat Service Worker. Tak perlu build, cukup <span class="mono">index.html</span> ini saja.</p>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn primary" data-goto="jadwal">➡️ Buka Jadwal Sholat</button>
+          <button class="btn success" data-goto="kiblat">🧭 Kompas Kiblat</button>
+          <button class="btn" id="btnInstall" style="display:none">⬇️ Install ke Home Screen</button>
+        </div>
+        <p class="muted" style="margin-top:10px">Tips: Izinkan <span class="chip">Lokasi</span> & <span class="chip">Arah Perangkat</span> agar akurat.</p>
+      </article>
+
+      <article class="card span-4">
+        <h2>Status</h2>
+        <div class="row"><span>Lokasi</span><span id="stLoc" class="pill">—</span></div>
+        <div class="row"><span>Service Worker</span><span id="stSW" class="pill">—</span></div>
+        <div class="row"><span>Offline Cache</span><span id="stCache" class="pill">—</span></div>
+        <div class="row"><span>Alarm</span><span id="stAlarm" class="pill">—</span></div>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn" id="btnReqPerm">Minta Izin Arah</button>
+          <button class="btn" id="btnGeo">Ambil Lokasi</button>
+          <button class="btn warn" id="btnClear">Reset App</button>
+        </div>
+      </article>
+
+      <article class="card span-12">
+        <h2>Log</h2>
+        <div id="log" class="mono" style="white-space:pre-wrap; font-size:12px; max-height:220px; overflow:auto;"></div>
+      </article>
+    </section>
+  </template>
+
+  <template id="jadwal-tpl">
+    <section class="grid">
+      <article class="card span-12">
+        <h2>Jadwal Sholat Hari Ini</h2>
+        <p class="muted">Sumber: <a href="https://aladhan.com/prayer-times-api" target="_blank" rel="noreferrer">Aladhan API</a>. Zona diambil dari koordinat GPS.</p>
+        <div class="cols">
+          <input class="input" id="city" placeholder="Kota (opsional, hanya label tampilan)">
+          <div class="stack">
+            <button class="btn" id="btnUseGPS">Gunakan GPS</button>
+            <button class="btn primary" id="btnFetch">Ambil Jadwal</button>
+          </div>
+        </div>
+        <div style="margin:10px 0" class="muted">Koordinat: <span id="coordText">—</span></div>
+
+        <table class="table" id="tbl">
+          <thead><tr><th>Waktu</th><th>Jam</th><th>Sisa</th><th>Aksi</th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn success" id="btnAlarmAll">Set Alarm Semua</button>
+          <button class="btn warn" id="btnAlarmClear">Hapus Semua Alarm</button>
+          <span class="pill" id="nextPrayer">—</span>
+        </div>
+      </article>
+    </section>
+  </template>
+
+  <template id="kiblat-tpl">
+    <section class="grid">
+      <article class="card span-6">
+        <h2>Kompas Kiblat</h2>
+        <p class="muted">Jarum biru menunjuk ke Ka'bah (Mekkah). Merah ke selatan geografis (indikatif).</p>
+        <div class="compass-wrap">
+          <div class="ring"></div>
+          <div class="needle" id="needle"></div>
+          <div class="dot"></div>
+        </div>
+        <div class="row"><span>Arah Kiblat</span><span class="pill" id="qDir">—</span></div>
+        <div class="row"><span>Heading</span><span class="pill" id="heading">—</span></div>
+        <div class="row"><span>Δ (selisih)</span><span class="pill" id="delta">—</span></div>
+        <div class="hr"></div>
+        <div class="stack">
+          <button class="btn" id="btnCompassPerm">Aktifkan Sensor</button>
+          <button class="btn" id="btnCalibrate">Kalibrasi</button>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h2>Koordinat</h2>
+        <div class="row"><span>Lokasi</span><span class="pill" id="kLoc">—</span></div>
+        <div class="row"><span>Jarak ke Ka'bah</span><span class="pill" id="dist">—</span></div>
+        <div class="hr"></div>
+        <p class="muted">Tips akurasi:
+          <ul class="list">
+            <li>Gerakkan ponsel seperti angka 8 untuk kalibrasi magnetometer.</li>
+            <li>Jauhkan dari logam/elektronik besar.</li>
+            <li>Izinkan lokasi dengan akurasi tinggi.</li>
+          </ul>
+        </p>
+      </article>
+    </section>
+  </template>
+
+  <template id="tes-tpl">
+    <section class="grid">
+      <article class="card span-4">
+        <h2>Bunyikan Adzan (demo)</h2>
+        <p class="muted">Contoh audio generator via WebAudio (bukan rekaman).</p>
+        <div class="stack">
+          <button class="btn success" id="btnTone">Beep Lembut</button>
+          <button class="btn" id="btnSpeak">Ucap “Allahu Akbar”</button>
+        </div>
+      </article>
+      <article class="card span-8">
+        <h2>Benchmark Ringan</h2>
+        <p class="muted">Uji kalkulasi JS agar tahu performa perangkat.</p>
+        <div class="stack">
+          <button class="btn primary" id="btnBench">Jalankan 5 juta operasi</button>
+          <span class="pill" id="benchOut">—</span>
+        </div>
+      </article>
+      <article class="card span-12">
+        <h2>Cache Explorer</h2>
+        <div class="stack">
+          <button class="btn" id="btnListCache">Daftar Cache</button>
+          <button class="btn warn" id="btnClearCache">Bersihkan Cache</button>
+        </div>
+        <pre id="cacheList" class="mono muted" style="white-space:pre-wrap; max-height:240px; overflow:auto;"></pre>
+      </article>
+    </section>
+  </template>
+
+  <template id="tentang-tpl">
+    <section class="grid">
+      <article class="card span-12">
+        <h2>Tentang</h2>
+        <p>Aplikasi ini dirancang <em>tanpa framework</em>, agar mudah disalin-tempel. Semua fitur di satu berkas:</p>
+        <ul class="list">
+          <li>SPA navigasi tab sederhana</li>
+          <li>Jadwal Sholat via <span class="mono">fetch()</span> ke Aladhan</li>
+          <li>Kompas Kiblat memakai <span class="mono">DeviceOrientation</span> + geodesi</li>
+          <li>Service Worker: cache offline & fallback</li>
+          <li>Alarm lokal memakai <span class="mono">setTimeout</span> (aktif selama tab terbuka)</li>
+        </ul>
+        <p class="muted">Untuk alarm latar belakang / notifikasi sistem, gunakan app native (Android AlarmManager) atau PWA + Push (butuh file manifest & web server). File ini tetap bisa dipasang ke layar beranda via “Add to Home screen”.</p>
+      </article>
+    </section>
+  </template>
+
+  <!-- App Script -->
+  <script>
+  ;(() => {
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+    const log = (...a) => {
+      const el = $('#log'); if(!el) return;
+      const t = new Date().toLocaleTimeString();
+      el.textContent = `[${t}] ${a.join(' ')}\n` + el.textContent;
+    };
+    const toast = (msg, type='') => {
+      const box = $('#toast');
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = msg;
+      if(type==='ok') item.style.borderColor = '#16a34a';
+      if(type==='warn') item.style.borderColor = '#d97706';
+      if(type==='err') item.style.borderColor = '#ef4444';
+      box.appendChild(item);
+      setTimeout(()=> item.remove(), 3600);
+    };
+    const save = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
+    const load = (k,d=null)=>{try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}};
+
+    // Router
+    const routes = {
+      home: () => $('#home-tpl').content.cloneNode(true),
+      jadwal: () => $('#jadwal-tpl').content.cloneNode(true),
+      kiblat: () => $('#kiblat-tpl').content.cloneNode(true),
+      tes: () => $('#tes-tpl').content.cloneNode(true),
+      tentang: () => $('#tentang-tpl').content.cloneNode(true),
+    };
+    let state = {
+      coords: load('coords'),
+      qiblaBearing: null,
+      heading: null,
+      alarms: load('alarms', []),
+      beforeInstallPrompt: null,
+    };
+
+    // Mount
+    const app = $('#app');
+    function render(route='home'){
+      app.innerHTML = '';
+      app.appendChild(routes[route]());
+      $$('.tab').forEach(b=>b.classList.toggle('active', b.dataset.route===route));
+      attachHandlers(route);
+    }
+    function goto(route){ window.location.hash = route; render(route); }
+
+    // Tabs click
+    $('#tabs').addEventListener('click', e=>{
+      const b = e.target.closest('.tab,[data-goto]');
+      if(!b) return;
+      const r = b.dataset.route || b.dataset.goto;
+      if(r) goto(r);
+    });
+
+    // Status footer year
+    $('#y').textContent = String(new Date().getFullYear());
+
+    // Install prompt
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      e.preventDefault();
+      state.beforeInstallPrompt = e;
+      const btn = $('#btnInstall');
+      if(btn){ btn.style.display = 'inline-flex'; btn.onclick = async ()=>{
+        await state.beforeInstallPrompt.prompt();
+        const choice = await state.beforeInstallPrompt.userChoice;
+        toast('Install: ' + choice.outcome, 'ok');
+      } }
+    });
+
+    // Geolocation
+    async function getCoords(){
+      return new Promise((res, rej)=>{
+        if(!('geolocation' in navigator)) return rej('Geolocation tidak tersedia');
+        navigator.geolocation.getCurrentPosition(
+          p=> res({lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy}),
+          err=> rej(err.message),
+          {enableHighAccuracy:true, timeout:15000, maximumAge:0}
+        );
+      });
+    }
+    function fmtCoord(c){ return c ? `${c.lat.toFixed(6)}, ${c.lon.toFixed(6)} ±${Math.round(c.acc||0)}m` : '—' }
+
+    // Haversine + initial bearing
+    const toRad = d=> d*Math.PI/180, toDeg = r => r*180/Math.PI;
+    function computeBearing(from, to){
+      const φ1 = toRad(from.lat), φ2 = toRad(to.lat);
+      const Δλ = toRad(to.lon - from.lon);
+      const y = Math.sin(Δλ)*Math.cos(φ2);
+      const x = Math.cos(φ1)*Math.cos(φ2)*Math.cos(Δλ) + Math.sin(φ1)*Math.sin(φ2);
+      return ( (toDeg(Math.atan2(y,x)) + 360) % 360 );
+    }
+    function haversine(a,b){
+      const R = 6371e3;
+      const φ1 = toRad(a.lat), φ2 = toRad(b.lat);
+      const dφ = toRad(b.lat - a.lat), dλ = toRad(b.lon - a.lon);
+      const s = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
+      const d = 2*R*Math.asin(Math.sqrt(s));
+      return d; // meters
+    }
+
+    // Qibla (Ka'bah)
+    const KAABA = {lat: 21.422487, lon: 39.826206};
+
+    // Device heading (absolute)
+    let orientationHandler = null;
+    async function requestOrientationPermission(){
+      if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+        try{
+          const r = await DeviceOrientationEvent.requestPermission();
+          return r === 'granted';
+        }catch(e){ return false }
+      }
+      return true; // non-iOS
+    }
+    function startOrientation(){
+      stopOrientation();
+      orientationHandler = (ev)=>{
+        // Try several properties
+        const alpha = ev.absolute ? ev.alpha : (ev.webkitCompassHeading ?? (360 - (ev.alpha ?? 0)));
+        const hdg = (alpha ?? 0);
+        state.heading = ( (hdg%360)+360 )%360;
+        updateCompass();
+      };
+      window.addEventListener('deviceorientation', orientationHandler, {once:false});
+    }
+    function stopOrientation(){
+      if(orientationHandler){
+        window.removeEventListener('deviceorientation', orientationHandler);
+        orientationHandler=null;
+      }
+    }
+
+    // Compass drawing
+    function updateCompass(){
+      const needle = $('#needle');
+      const qDir = $('#qDir');
+      const heading = $('#heading');
+      const delta = $('#delta');
+      if(!needle) return;
+      const q = state.qiblaBearing ?? 0;
+      const h = state.heading ?? 0;
+      const d = ((q - h + 540) % 360) - 180; // signed shortest
+      needle.style.transform = `translate(-50%,-50%) rotate(${h}deg)`;
+      if(qDir) qDir.textContent = `${q.toFixed(1)}°`;
+      if(heading) heading.textContent = `${h.toFixed(1)}°`;
+      if(delta) delta.textContent = `${d.toFixed(1)}°`;
+    }
+
+    // Service Worker (inline via Blob)
+    const SW_CODE = `
+      const NAME = 'ria-cache-v1';
+      const CORE = self.registration.scope.endsWith('/') ? self.registration.scope : self.registration.scope + '/';
+      const PRECACHE = [ CORE ];
+      self.addEventListener('install', e=>{
+        e.waitUntil(caches.open(NAME).then(c=>c.addAll(PRECACHE)));
+        self.skipWaiting();
+      });
+      self.addEventListener('activate', e=>{
+        e.waitUntil((async()=>{
+          const keys = await caches.keys();
+          await Promise.all(keys.filter(k=>k!==NAME).map(k=>caches.delete(k)));
+          self.clients.claim();
+        })());
+      });
+      self.addEventListener('fetch', e=>{
+        const url = new URL(e.request.url);
+        if(e.request.method!=='GET'){ return; }
+        // Network first for API, cache-first for same-origin
+        if(url.origin === location.origin){
+          e.respondWith((async()=>{
+            const cached = await caches.match(e.request);
+            if(cached) return cached;
+            try{
+              const resp = await fetch(e.request);
+              const c = await caches.open(NAME); c.put(e.request, resp.clone());
+              return resp;
+            }catch(err){
+              return cached ?? new Response('<h1 style="font-family:sans-serif">Offline</h1>', {headers:{'Content-Type':'text/html'}});
+            }
+          })());
+          return;
+        }
+        // APIs / cross-origin: try network then cache
+        e.respondWith((async()=>{
+          try{
+            const resp = await fetch(e.request);
+            return resp;
+          }catch(err){
+            const cached = await caches.match(e.request);
+            return cached ?? new Response(JSON.stringify({error:'offline'}), {headers:{'Content-Type':'application/json'}});
+          }
+        })());
+      });
+    `;
+    async function registerSW(){
+      if(!('serviceWorker' in navigator)) return;
+      const blob = new Blob([SW_CODE], {type:'text/javascript'});
+      const url = URL.createObjectURL(blob);
+      try{
+        const reg = await navigator.serviceWorker.register(url, {scope: './'});
+        $('#stSW')?.replaceWith(pill('stSW','Aktif'));
+        // small delay to ensure installed
+        setTimeout(async()=>{
+          const c = await caches.open('ria-cache-v1');
+          const keys = await c.keys();
+          $('#stCache')?.replaceWith(pill('stCache', keys.length ? `${keys.length} item` : 'Siap'));
+        }, 600);
+        log('SW terdaftar.');
+      }catch(e){
+        log('SW gagal:', e);
+      }
+    }
+
+    // Pill helper
+    function pill(id, text){ const s=document.createElement('span'); s.id=id; s.className='pill'; s.textContent=text; return s; }
+
+    // Alarm (Tab-based)
+    function setAlarmAt(ts, label){
+      const now = Date.now();
+      const delay = Math.max(0, ts - now);
+      const id = Math.random().toString(36).slice(2);
+      const timer = setTimeout(()=>{
+        notify(`Waktunya ${label}`);
+        playTone();
+      }, delay);
+      state.alarms.push({id, ts, label});
+      save('alarms', state.alarms);
+      $('#stAlarm')?.replaceWith(pill('stAlarm', `${state.alarms.length} aktif`));
+      return {id, timer};
+    }
+    function clearAlarms(){
+      state.alarms = [];
+      save('alarms', state.alarms);
+      $('#stAlarm')?.replaceWith(pill('stAlarm', '—'));
+    }
+
+    // Tone demo
+    function playTone(){
+      try{
+        const ac = new (window.AudioContext||window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type='sine'; o.frequency.value=660;
+        o.connect(g); g.connect(ac.destination);
+        g.gain.setValueAtTime(.0001, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(.3, ac.currentTime+.02);
+        g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime+.9);
+        o.start(); o.stop(ac.currentTime+1);
+      }catch{}
+    }
+    function speak(text='Allahu Akbar'){
+      if(!('speechSynthesis' in window)) return toast('Speech synthesis tidak tersedia','warn');
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ar-SA';
+      speechSynthesis.speak(u);
+    }
+
+    // API: Aladhan by coords
+    async function fetchTimings(coords){
+      const d = new Date();
+      const url = `https://api.aladhan.com/v1/timings/${Math.floor(d.getTime()/1000)}?latitude=${coords.lat}&longitude=${coords.lon}&method=20&school=1`;
+      const res = await fetch(url);
+      const js = await res.json();
+      if(js.code !== 200) throw new Error('Gagal mengambil jadwal');
+      return js.data; // { timings, date, meta }
+    }
+
+    function toMillis(todayStr){
+      // "05:01" -> today 05:01 local
+      const [H,M] = todayStr.split(':').map(Number);
+      const d = new Date();
+      d.setHours(H,M,0,0);
+      return d.getTime();
+    }
+
+    function nextPrayerFrom(timings){
+      const order = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+      const now = Date.now();
+      for(const k of order){
+        const t = toMillis(timings[k]);
+        if(t>now) return {name:k, ts:t};
+      }
+      // next day Fajr (approx add 1 day to Fajr today)
+      return {name:'Fajr (besok)', ts: toMillis(timings['Fajr']) + 86400000};
+    }
+
+    function attachHandlers(route){
+      // Common status
+      $('#stLoc')?.replaceWith(pill('stLoc', state.coords ? fmtCoord(state.coords) : '—'));
+      $('#stAlarm')?.replaceWith(pill('stAlarm', state.alarms.length?`${state.alarms.length} aktif`:'—'));
+
+      if(route==='home'){
+        $('#btnGeo')?.addEventListener('click', async ()=>{
+          try{
+            const c = await getCoords();
+            state.coords = {lat:c.lat, lon:c.lon, acc:c.acc};
+            save('coords', state.coords);
+            $('#stLoc')?.replaceWith(pill('stLoc', fmtCoord(state.coords)));
+            toast('Lokasi disimpan', 'ok');
+            log('Lokasi:', fmtCoord(state.coords));
+          }catch(e){ toast(String(e),'err'); }
+        });
+        $('#btnReqPerm')?.addEventListener('click', async ()=>{
+          const ok = await requestOrientationPermission();
+          toast(ok?'Izin sensor diberikan':'Izin ditolak', ok?'ok':'warn');
+        });
+        $('#btnClear')?.addEventListener('click', ()=>{
+          localStorage.clear(); state.coords=null; state.alarms=[];
+          toast('Data dihapus', 'ok'); render('home');
+        });
+      }
+
+      if(route==='jadwal'){
+        // Prefill coords
+        $('#coordText').textContent = state.coords ? fmtCoord(state.coords) : '—';
+        $('#btnUseGPS')?.addEventListener('click', async ()=>{
+          try{
+            const c = await getCoords();
+            state.coords = {lat:c.lat, lon:c.lon, acc:c.acc};
+            save('coords', state.coords);
+            $('#coordText').textContent = fmtCoord(state.coords);
+            toast('Lokasi diperbarui', 'ok');
+          }catch(e){ toast(String(e),'err'); }
+        });
+        $('#btnFetch')?.addEventListener('click', async ()=>{
+          if(!state.coords){ toast('Ambil lokasi dulu','warn'); return; }
+          try{
+            const data = await fetchTimings(state.coords);
+            const tb = $('#tbl tbody'); tb.innerHTML='';
+            const order = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+            for(const k of order){
+              const tr = document.createElement('tr');
+              const time = data.timings[k];
+              tr.innerHTML = `<td>${k}</td><td class="mono">${time}</td><td class="muted">—</td><td><button class="btn" data-time="${time}" data-label="${k}">Alarm</button></td>`;
+              tb.appendChild(tr);
+            }
+            // update sisa waktu setiap 1s
+            let timer = setInterval(()=>{
+              const now = Date.now();
+              $$('#tbl tbody tr').forEach(tr=>{
+                const t = toMillis($('.mono', tr).textContent);
+                const diff = t - now;
+                const td = tr.children[2];
+                if(diff>0){
+                  const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+                  td.textContent = `${h}j ${m}m ${s}d`;
+                }else{
+                  td.textContent = '—';
+                }
+              });
+            },1000);
+            const nx = nextPrayerFrom(data.timings);
+            $('#nextPrayer').textContent = `Berikutnya: ${nx.name} (${new Date(nx.ts).toLocaleTimeString()})`;
+
+            // Alarm button
+            $('#tbl').onclick = (e)=>{
+              const b = e.target.closest('button[data-time]');
+              if(!b) return;
+              const ts = toMillis(b.dataset.time);
+              const {label} = b.dataset;
+              setAlarmAt(ts, label);
+              toast(`Alarm set untuk ${label}`, 'ok');
+            };
+
+            // Bulk
+            $('#btnAlarmAll')?.addEventListener('click', ()=>{
+              const order2 = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
+              order2.forEach(k=> setAlarmAt( toMillis(data.timings[k]), k ));
+              toast('Semua alarm di-set', 'ok');
+            });
+          }catch(e){
+            toast('Gagal mengambil jadwal', 'err');
+          }
+        });
+        $('#btnAlarmClear')?.addEventListener('click', ()=>{
+          clearAlarms(); toast('Alarm dibersihkan', 'ok');
+        });
+      }
+
+      if(route==='kiblat'){
+        // Ensure coords
+        (async ()=>{
+          if(!state.coords){
+            try{
+              const c = await getCoords();
+              state.coords = {lat:c.lat, lon:c.lon, acc:c.acc};
+              save('coords', state.coords);
+            }catch{}
+          }
+          $('#kLoc').textContent = state.coords ? fmtCoord(state.coords) : '—';
+          if(state.coords){
+            state.qiblaBearing = computeBearing(state.coords, KAABA);
+            $('#qDir').textContent = `${state.qiblaBearing.toFixed(1)}°`;
+            const d = haversine(state.coords, KAABA);
+            $('#dist').textContent = d>1000 ? (d/1000).toFixed(1)+' km' : Math.round(d)+' m';
+            updateCompass();
+          }
+        })();
+
+        $('#btnCompassPerm')?.addEventListener('click', async ()=>{
+          const ok = await requestOrientationPermission();
+          if(!ok){ toast('Izin orientasi ditolak','warn'); return; }
+          startOrientation(); toast('Sensor aktif','ok');
+        });
+        $('#btnCalibrate')?.addEventListener('click', ()=>{
+          toast('Gerakkan ponsel seperti angka 8 selama 10 detik','warn');
+        });
+      }
+
+      if(route==='tes'){
+        $('#btnTone')?.addEventListener('click', ()=> playTone());
+        $('#btnSpeak')?.addEventListener('click', ()=> speak('Allahu Akbar'));
+        $('#btnBench')?.addEventListener('click', ()=>{
+          const t0 = performance.now(); let s=0;
+          for(let i=0;i<5_000_000;i++){ s = (s*1664525 + 1013904223) >>> 0; }
+          const t1 = performance.now();
+          $('#benchOut').textContent = `${(t1-t0).toFixed(1)} ms, hash=${s}`;
+        });
+        $('#btnListCache')?.addEventListener('click', async ()=>{
+          try{
+            const keys = await caches.keys();
+            const out = [];
+            for(const k of keys){
+              const c = await caches.open(k);
+              const reqs = await c.keys();
+              out.push(`• ${k} (${reqs.length} item)`);
+              reqs.forEach(r=> out.push('  - ' + r.url));
+            }
+            $('#cacheList').textContent = out.join('\n') || '(kosong)';
+          }catch(e){ $('#cacheList').textContent = 'Cache API tidak tersedia'; }
+        });
+        $('#btnClearCache')?.addEventListener('click', async ()=>{
+          try{
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k=>caches.delete(k)));
+            toast('Cache dihapus', 'ok');
+          }catch(e){ toast('Gagal hapus cache', 'err'); }
+        });
+      }
+
+      if(route==='tentang'){
+        // nothing extra
+      }
+    }
+
+    // Status boxes initial
+    $('#stSW')?.replaceWith(pill('stSW', 'Mendaftar…'));
+    $('#stCache')?.replaceWith(pill('stCache', '—'));
+    $('#stAlarm')?.replaceWith(pill('stAlarm', state.alarms.length?`${state.alarms.length} aktif`:'—'));
+
+    // Start
+    registerSW();
+    const hash = (location.hash||'#home').slice(1);
+    render(routes[hash] ? hash : 'home');
+
+    // Hashchange
+    window.addEventListener('hashchange', ()=> {
+      const r = (location.hash||'#home').slice(1);
+      render(routes[r]? r : 'home');
+    });
+
+    // Initial logs
+    log('App siap.');
+    if(state.coords){ log('Koordinat tersimpan:', fmtCoord(state.coords)); }
+  })();
+  </script>
+</body>
+</html>
